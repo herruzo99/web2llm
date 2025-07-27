@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 
+
 class BaseScraper(ABC):
     """Abstract base class for all scraper implementations."""
+
     def __init__(self, source: str):
         # `source` can be a URL or a local file path.
         self.source = source

@@ -1,11 +1,13 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 
 @pytest.fixture
 def temp_project_dir(tmp_path: Path) -> Path:
     """Creates a temporary directory structure mimicking a simple project."""
     project_root = tmp_path / "my-test-project"
-    
+
     src_dir = project_root / "src"
     src_dir.mkdir(parents=True)
     (src_dir / "main.py").write_text("print('hello world')")
@@ -17,8 +19,9 @@ def temp_project_dir(tmp_path: Path) -> Path:
 
     (project_root / ".gitignore").write_text("*.pyc\n__pycache__/")
     (project_root / "README.md").write_text("# My Test Project")
-    
+
     return project_root
+
 
 @pytest.fixture
 def mock_github_api_response():
@@ -31,5 +34,5 @@ def mock_github_api_response():
         "stargazers_count": 123,
         "forks_count": 45,
         "license": {"name": "MIT License"},
-        "scraped_at": "2023-10-27T10:00:00Z"
+        "scraped_at": "2023-10-27T10:00:00Z",
     }

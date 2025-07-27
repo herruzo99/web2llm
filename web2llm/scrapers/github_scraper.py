@@ -1,34 +1,58 @@
 import os
 import re
 import tempfile
-import git
 from datetime import datetime, timezone
 
-from .base_scraper import BaseScraper
-from ..utils import fetch_json
+import git
+
 from ..config import CODE_IGNORE_CONFIG
+from ..utils import fetch_json
+from .base_scraper import BaseScraper
 
 LANGUAGE_MAP = {
-    '.py': 'python', '.js': 'javascript', '.ts': 'typescript', '.java': 'java', '.c': 'c', '.cpp': 'cpp', '.h': 'c',
-    '.cs': 'csharp', '.go': 'go', '.rs': 'rust', '.rb': 'ruby', '.php': 'php', '.html': 'html', '.css': 'css', '.scss': 'scss',
-    '.json': 'json', '.xml': 'xml', '.yaml': 'yaml', '.yml': 'yaml', '.md': 'markdown', '.sh': 'shell', '.ps1': 'powershell',
-    'dockerfile': 'dockerfile', 'makefile': 'makefile', '.txt': 'text'
+    ".py": "python",
+    ".js": "javascript",
+    ".ts": "typescript",
+    ".java": "java",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".h": "c",
+    ".cs": "csharp",
+    ".go": "go",
+    ".rs": "rust",
+    ".rb": "ruby",
+    ".php": "php",
+    ".html": "html",
+    ".css": "css",
+    ".scss": "scss",
+    ".json": "json",
+    ".xml": "xml",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".md": "markdown",
+    ".sh": "shell",
+    ".ps1": "powershell",
+    "dockerfile": "dockerfile",
+    "makefile": "makefile",
+    ".txt": "text",
 }
+
 
 def is_likely_text_file(filepath: str) -> bool:
     """Check if a file is likely text-based by trying to decode a small chunk."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             f.read(1024)
         return True
     except (UnicodeDecodeError, IOError):
         return False
 
+
 def _process_directory(
     root_path: str,
     include_patterns: list,
     exclude_patterns: list,
-    include_all: bool = False
+    include_all: bool = False,
 ) -> tuple[str, str]:
     """
     Walk a directory, creating a file tree and concatenating the content of text files.
@@ -36,7 +60,7 @@ def _process_directory(
     """
     file_tree_lines = []
     concatenated_content_parts = []
-    
+
     if include_all:
         ignore_dirs_set = set()
         ignore_files_lower = set()
@@ -49,32 +73,40 @@ def _process_directory(
     start_paths = [root_path]
     if include_patterns:
         # Filter top-level directories against include patterns
-        top_level_dirs = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, d))]
+        top_level_dirs = [
+            d
+            for d in os.listdir(root_path)
+            if os.path.isdir(os.path.join(root_path, d))
+        ]
         matched_start_dirs = []
         for d in top_level_dirs:
             if any(p.match(d) for p in include_patterns):
                 matched_start_dirs.append(os.path.join(root_path, d))
-        
+
         start_paths = matched_start_dirs
         if not start_paths:
-            print(f"Warning: None of the top-level directories matched the --include-dirs patterns.")
+            print(
+                "Warning: None of the top-level directories matched the --include-dirs patterns."
+            )
 
     for path in start_paths:
         for dirpath, dirnames, filenames in os.walk(path, topdown=True):
             # Filter directories in-place using regex patterns
             dirnames[:] = [
-                d for d in dirnames 
-                if d not in ignore_dirs_set and not any(p.match(d) for p in exclude_patterns)
+                d
+                for d in dirnames
+                if d not in ignore_dirs_set
+                and not any(p.match(d) for p in exclude_patterns)
             ]
 
             relative_path = os.path.relpath(dirpath, root_path)
-            
-            if relative_path == '.':
+
+            if relative_path == ".":
                 depth = 0
             else:
                 depth = len(relative_path.split(os.sep))
 
-            if relative_path != '.':
+            if relative_path != ".":
                 indent = "    " * (depth)
                 file_tree_lines.append(f"{indent}|-- {os.path.basename(dirpath)}/")
 
@@ -83,17 +115,22 @@ def _process_directory(
             for f in sorted(filenames):
                 file_path = os.path.join(dirpath, f)
                 _, extension = os.path.splitext(f)
-                if f.lower() in ignore_files_lower or extension in ignore_extensions_set:
+                if (
+                    f.lower() in ignore_files_lower
+                    or extension in ignore_extensions_set
+                ):
                     continue
 
                 file_tree_lines.append(f"{files_indent}|-- {f}")
                 if is_likely_text_file(file_path):
                     try:
-                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file_content:
+                        with open(
+                            file_path, "r", encoding="utf-8", errors="ignore"
+                        ) as file_content:
                             content = file_content.read()
 
                         relative_file_path = os.path.relpath(file_path, root_path)
-                        lang = LANGUAGE_MAP.get(extension, 'text')
+                        lang = LANGUAGE_MAP.get(extension, "text")
                         if f.lower() in LANGUAGE_MAP:
                             lang = LANGUAGE_MAP[f.lower()]
 
@@ -108,11 +145,18 @@ def _process_directory(
 
 class GitHubScraper(BaseScraper):
     """Scrapes a GitHub repository by cloning it and extracting its content."""
-    def __init__(self, url: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
+
+    def __init__(
+        self, url: str, include_dirs: str, exclude_dirs: str, include_all: bool = False
+    ):
         super().__init__(source=url)
         try:
-            self.include_patterns = [re.compile(p.strip()) for p in include_dirs.split(',') if p.strip()]
-            self.exclude_patterns = [re.compile(p.strip()) for p in exclude_dirs.split(',') if p.strip()]
+            self.include_patterns = [
+                re.compile(p.strip()) for p in include_dirs.split(",") if p.strip()
+            ]
+            self.exclude_patterns = [
+                re.compile(p.strip()) for p in exclude_dirs.split(",") if p.strip()
+            ]
         except re.error as e:
             raise ValueError(f"Invalid regex pattern provided: {e}")
         self.include_all = include_all
@@ -120,7 +164,9 @@ class GitHubScraper(BaseScraper):
     def scrape(self) -> tuple[str, dict]:
         owner, repo_name = self._parse_github_url()
         if not owner or not repo_name:
-            raise ValueError("Invalid GitHub URL format. Expected 'https://github.com/owner/repo'.")
+            raise ValueError(
+                "Invalid GitHub URL format. Expected 'https://github.com/owner/repo'."
+            )
 
         api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
         repo_data = fetch_json(api_url)
@@ -128,10 +174,12 @@ class GitHubScraper(BaseScraper):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_url = f"https://github.com/{owner}/{repo_name}.git"
             print(f"Cloning repository from {repo_url}...")
-            git.Repo.clone_from(repo_url, temp_dir, depth=1) # shallow clone
+            git.Repo.clone_from(repo_url, temp_dir, depth=1)  # shallow clone
             print("Clone successful.")
 
-            file_tree, concatenated_content = _process_directory(temp_dir, self.include_patterns, self.exclude_patterns, self.include_all)
+            file_tree, concatenated_content = _process_directory(
+                temp_dir, self.include_patterns, self.exclude_patterns, self.include_all
+            )
 
         front_matter = self._create_front_matter(repo_data)
         final_markdown = f"{front_matter}\n## Repository File Tree\n\n```\n{file_tree}\n```\n\n## File Contents\n\n{concatenated_content}"
@@ -141,13 +189,15 @@ class GitHubScraper(BaseScraper):
     def _parse_github_url(self) -> tuple[str | None, str | None]:
         match = re.search(r"github\.com/([^/]+)/([^/]+)", self.source)
         if match:
-            return match.group(1), match.group(2).replace('.git', '')
+            return match.group(1), match.group(2).replace(".git", "")
         return None, None
 
     def _create_front_matter(self, data: dict) -> str:
         description_text = (data.get("description") or "").strip()
         license_info = data.get("license")
-        license_text = license_info.get("name") if license_info else "No license specified"
+        license_text = (
+            license_info.get("name") if license_info else "No license specified"
+        )
 
         return (
             "---\n"
@@ -155,8 +205,8 @@ class GitHubScraper(BaseScraper):
             f'source_url: "{data.get("html_url", "")}"\n'
             f'description: "{description_text}"\n'
             f'language: "{data.get("language", "N/A")}"\n'
-            f'stars: {data.get("stargazers_count", 0)}\n'
-            f'forks: {data.get("forks_count", 0)}\n'
+            f"stars: {data.get('stargazers_count', 0)}\n"
+            f"forks: {data.get('forks_count', 0)}\n"
             f'license: "{license_text}"\n'
             f'scraped_at: "{datetime.now(timezone.utc).isoformat()}"\n'
             "---\n"

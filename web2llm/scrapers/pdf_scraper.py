@@ -1,12 +1,14 @@
 import io
 import os
-import requests
-import pdfplumber
 from datetime import datetime, timezone
+
+import pdfplumber
+import requests
 from bs4 import BeautifulSoup
 
-from .base_scraper import BaseScraper
 from ..utils import fetch_html
+from .base_scraper import BaseScraper
+
 
 class PDFScraper(BaseScraper):
     """
@@ -22,43 +24,47 @@ class PDFScraper(BaseScraper):
         for obj in first_page.chars:
             if obj.get("size", 0) > max_size:
                 max_size = obj["size"]
-        
+
         if max_size > 0:
-            title_candidates = [obj['text'] for obj in first_page.chars if obj.get('size') == max_size]
+            title_candidates = [
+                obj["text"] for obj in first_page.chars if obj.get("size") == max_size
+            ]
             largest_text = "".join(title_candidates).strip()
-        
+
         return largest_text
 
     def _get_metadata_from_arxiv(self, url: str) -> dict:
         """For an arXiv PDF URL, fetches metadata from the abstract page."""
-        metadata = {'title': '', 'description': ''}
-        landing_page_url = url.replace('/pdf/', '/abs/')
-        
+        metadata = {"title": "", "description": ""}
+        landing_page_url = url.replace("/pdf/", "/abs/")
+
         try:
             html = fetch_html(landing_page_url)
-            soup = BeautifulSoup(html, 'lxml')
+            soup = BeautifulSoup(html, "lxml")
 
-            title_tag = soup.select_one('h1.title')
+            title_tag = soup.select_one("h1.title")
             if title_tag:
-                metadata['title'] = title_tag.get_text(strip=True).replace("Title:", "").strip()
+                metadata["title"] = (
+                    title_tag.get_text(strip=True).replace("Title:", "").strip()
+                )
 
-            desc_tag = soup.select_one('blockquote.abstract')
+            desc_tag = soup.select_one("blockquote.abstract")
             if desc_tag:
                 desc_text = desc_tag.get_text().replace("Abstract:", "").strip()
-                metadata['description'] = ' '.join(desc_text.split())
+                metadata["description"] = " ".join(desc_text.split())
         except IOError as e:
             print(f"Warning: Could not fetch or parse arXiv landing page: {e}")
         return metadata
 
     def scrape(self) -> tuple[str, dict]:
-        is_remote = self.source.startswith(('http://', 'https://'))
-        metadata = {'title': '', 'description': ''}
+        is_remote = self.source.startswith(("http://", "https://"))
+        metadata = {"title": "", "description": ""}
 
         pdf_handle = None
         try:
             if is_remote:
                 print(f"Downloading remote PDF: {self.source}")
-                if 'arxiv.org/pdf/' in self.source:
+                if "arxiv.org/pdf/" in self.source:
                     metadata.update(self._get_metadata_from_arxiv(self.source))
 
                 response = requests.get(self.source, timeout=30)
@@ -68,13 +74,13 @@ class PDFScraper(BaseScraper):
                 if not os.path.isfile(self.source):
                     raise FileNotFoundError(f"File not found: {self.source}")
                 print(f"Processing local PDF file: {self.source}")
-                pdf_handle = open(self.source, 'rb')
+                pdf_handle = open(self.source, "rb")
 
             pdf_content = ""
-            title = metadata.get('title')
+            title = metadata.get("title")
             with pdfplumber.open(pdf_handle) as pdf:
-                if not title and pdf.metadata and pdf.metadata.get('Title'):
-                    title = pdf.metadata['Title']
+                if not title and pdf.metadata and pdf.metadata.get("Title"):
+                    title = pdf.metadata["Title"]
 
                 if not title and len(pdf.pages) > 0:
                     title = self._find_title_heuristic(pdf.pages[0])
@@ -82,11 +88,11 @@ class PDFScraper(BaseScraper):
                 if not title:
                     title = os.path.basename(self.source)
 
-                metadata['title'] = title
-                
+                metadata["title"] = title
+
                 for i, page in enumerate(pdf.pages):
                     text = page.extract_text(keep_blank_chars=True, x_tolerance=2) or ""
-                    pdf_content += f"\n\n--- Page {i+1} ---\n\n{text}"
+                    pdf_content += f"\n\n--- Page {i + 1} ---\n\n{text}"
 
         finally:
             if pdf_handle:
@@ -108,7 +114,7 @@ class PDFScraper(BaseScraper):
             source_key: self.source,
             "page_title": metadata["title"],
             "description": metadata.get("description", ""),
-            "scraped_at": scraped_at
+            "scraped_at": scraped_at,
         }
 
         return front_matter + pdf_content, context_data
