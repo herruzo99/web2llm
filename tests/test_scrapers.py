@@ -38,6 +38,26 @@ def test_local_folder_scraper_respects_exclude_dirs(temp_project_dir):
     assert "### `src/main.py`" not in markdown
     assert "### `src/utils.py`" not in markdown
 
+def test_local_folder_scraper_includes_all_files_with_flag(temp_project_dir):
+    scraper = LocalFolderScraper(str(temp_project_dir), "", "", include_all=True)
+    markdown, _ = scraper.scrape()
+
+    assert "### `README.md`" in markdown
+    assert "### `src/main.py`" in markdown
+    assert "### `src/utils.py`" in markdown
+    # .gitignore and docs should now be included
+    assert "### `.gitignore`" in markdown
+    assert "### `docs/guide.md`" in markdown
+
+def test_local_folder_scraper_with_include_all_respects_exclude_dirs(temp_project_dir):
+    scraper = LocalFolderScraper(str(temp_project_dir), "", "docs", include_all=True)
+    markdown, _ = scraper.scrape()
+
+    assert "### `README.md`" in markdown
+    assert "### `.gitignore`" in markdown # included via --include-all
+    assert "### `src/main.py`" in markdown
+    assert "### `docs/guide.md`" not in markdown # excluded via --exclude-dirs
+
 # --- GitHubScraper Tests ---
 
 def test_github_scraper_assembles_correct_markdown(mocker, mock_github_api_response):

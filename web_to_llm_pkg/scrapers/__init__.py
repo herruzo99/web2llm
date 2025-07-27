@@ -11,14 +11,14 @@ from .local_folder_scraper import LocalFolderScraper
 from .pdf_scraper import PDFScraper
 from ..utils import get_url_content_type
 
-def get_scraper(source: str, include_dirs: str = "", exclude_dirs: str = "") -> BaseScraper | None:
+def get_scraper(source: str, include_dirs: str = "", exclude_dirs: str = "", include_all: bool = False) -> BaseScraper | None:
     """Selects the appropriate scraper class for a given source (URL or local path)."""
     
     # Check if it's a local path first.
     source_path = os.path.expanduser(source)
     if os.path.exists(source_path):
         if os.path.isdir(source_path):
-            return LocalFolderScraper(source_path, include_dirs, exclude_dirs)
+            return LocalFolderScraper(source_path, include_dirs, exclude_dirs, include_all)
         elif source_path.lower().endswith('.pdf'):
             return PDFScraper(source_path)
         else:
@@ -30,7 +30,7 @@ def get_scraper(source: str, include_dirs: str = "", exclude_dirs: str = "") -> 
         raise ValueError(f"Invalid URL or non-existent local path: {source}")
 
     if "github.com" in parsed_url.netloc:
-        return GitHubScraper(source, include_dirs, exclude_dirs)
+        return GitHubScraper(source, include_dirs, exclude_dirs, include_all)
 
     # For other URLs, check the content-type to see if it's a PDF.
     content_type = get_url_content_type(source)

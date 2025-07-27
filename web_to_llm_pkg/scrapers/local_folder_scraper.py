@@ -9,10 +9,11 @@ class LocalFolderScraper(BaseScraper):
     Scrapes a local folder, reusing the file processing and filtering logic
     from the GitHubScraper.
     """
-    def __init__(self, path: str, include_dirs: str, exclude_dirs: str):
+    def __init__(self, path: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
         super().__init__(source=path)
         self.include_dirs = [d.strip() for d in include_dirs.split(',') if d.strip()]
         self.exclude_dirs = [d.strip() for d in exclude_dirs.split(',') if d.strip()]
+        self.include_all = include_all
 
     def scrape(self) -> tuple[str, dict]:
         if not os.path.isdir(self.source):
@@ -20,7 +21,7 @@ class LocalFolderScraper(BaseScraper):
 
         print(f"Processing local directory: {self.source}")
 
-        file_tree, concatenated_content = _process_directory(self.source, self.include_dirs, self.exclude_dirs)
+        file_tree, concatenated_content = _process_directory(self.source, self.include_dirs, self.exclude_dirs, self.include_all)
 
         scraped_at = datetime.now(timezone.utc).isoformat()
         folder_name = os.path.basename(os.path.normpath(self.source))

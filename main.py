@@ -31,6 +31,11 @@ def main():
         help="Comma-separated list of directories to include (for folder/repo scrapers)."
     )
     parser.add_argument(
+        "--include-all",
+        action="store_true",
+        help='Ignore the default ignored list and include all files, except those in --exclude-dirs.'
+    )
+    parser.add_argument(
         "--exclude-dirs",
         type=str,
         default="",
@@ -40,7 +45,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        scraper = get_scraper(args.source, args.include_dirs, args.exclude_dirs)
+        scraper = get_scraper(args.source, args.include_dirs, args.exclude_dirs, args.include_all)
 
         if not scraper:
              print(f"Error: Could not determine how to handle source: {args.source}", file=sys.stderr)
