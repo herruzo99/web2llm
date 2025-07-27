@@ -4,3 +4,7 @@ lxml
 markdownify
 GitPython
 pdfplumber
+
+# For testing
+pytest
+pytest-mock

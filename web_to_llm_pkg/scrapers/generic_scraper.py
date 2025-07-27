@@ -1,7 +1,8 @@
 """A generic scraper for standard HTML documentation websites."""
 
 import warnings
-from bs4 import BeautifulSoup, element, XMLParsedAsHTMLWarning
+import copy
+from bs4 import BeautifulSoup, element, NavigableString, XMLParsedAsHTMLWarning
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 from markdownify import markdownify as md
@@ -67,6 +68,61 @@ class GenericScraper(BaseScraper):
                 links.append({"text": text, "href": urljoin(base_url, a_tag['href'])})
         return links
 
+    def _get_fragment_element(self, soup, fragment_id):
+        """
+        Finds the content associated with a URL fragment. This is the robust version.
+        """
+        target_element = soup.find(id=fragment_id)
+        if not target_element:
+            return None
+
+        # If the target is not a header, it's its own self-contained section.
+        if target_element.name not in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            return copy.copy(target_element)
+
+        # If the target IS a header, we collect its content until the next stop tag.
+        stop_level = int(target_element.name[1])
+        stop_tags = [f"h{i}" for i in range(1, stop_level + 1)]
+
+        # Create a new div to hold the results.
+        main_element = soup.new_tag("div")
+        main_element.append(copy.copy(target_element))
+
+        # Iterate through the SIBLINGS of the target element. This is crucial
+        # because it respects the document hierarchy and won't grab elements
+        # from outside the current container (like a <footer>).
+        for sibling in target_element.find_next_siblings():
+            if isinstance(sibling, NavigableString):
+                main_element.append(copy.copy(sibling))
+                continue
+
+            # If the sibling itself is a stop tag, we're done.
+            if sibling.name in stop_tags:
+                break
+            
+            # The tricky case: the sibling might CONTAIN a stop tag.
+            if sibling.find(stop_tags):
+                # We must process this sibling carefully. To avoid modifying the
+                # original document, we create a deepcopy to work with.
+                safe_sibling = copy.deepcopy(sibling)
+                
+                # Find the stop tag within our safe copy.
+                nested_stop_tag = safe_sibling.find(stop_tags)
+                
+                # Prune the copy: remove the stop tag and all its following siblings.
+                for tag in nested_stop_tag.find_next_siblings():
+                    tag.decompose()
+                nested_stop_tag.decompose()
+                
+                main_element.append(safe_sibling)
+                # Since we handled the stop condition, we must break the main loop.
+                break
+            else:
+                # This sibling is clean, a shallow copy is efficient and safe.
+                main_element.append(copy.copy(sibling))
+        
+        return main_element
+    
     def scrape(self) -> tuple[str, dict]:
         html = fetch_html(self.source)
         soup = BeautifulSoup(html, 'lxml')
@@ -75,35 +131,13 @@ class GenericScraper(BaseScraper):
         description_tag = soup.find("meta", attrs={"name": "description"})
         description = description_tag['content'].strip() if description_tag and description_tag.get('content') else "No description found."
         scraped_at = datetime.now(timezone.utc).isoformat()
-
+        
         main_element = None
         parsed_url = urlparse(self.source)
         fragment_id = parsed_url.fragment
 
         if fragment_id:
-            target_element = soup.find(id=fragment_id)
-            if target_element:
-                if target_element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
-                    section_container = target_element
-                    while not section_container.find_next_sibling() and section_container.parent and section_container.parent.name != 'body':
-                        section_container = section_container.parent
-                    
-                    stop_level = int(target_element.name[1])
-                    stop_tags = [f"h{i}" for i in range(1, stop_level + 1)]
-
-                    elements_to_extract = [section_container]
-                    for sibling in section_container.find_next_siblings():
-                        if sibling.name and sibling.name in stop_tags:
-                            break
-                        if hasattr(sibling, 'find') and sibling.find(stop_tags):
-                            break
-                        elements_to_extract.append(sibling)
-
-                    main_element = soup.new_tag("div")
-                    for el in elements_to_extract:
-                        main_element.append(el)
-                else:
-                    main_element = target_element
+            main_element = self._get_fragment_element(soup, fragment_id)
 
         if not main_element:
             for selector in self.config["main_content_selectors"]:
@@ -122,8 +156,12 @@ class GenericScraper(BaseScraper):
 
         final_title = title
         if fragment_id and main_element:
-            final_title = f"{title} (Section: {fragment_id})"
-        
+            h1 = main_element.find(['h1', 'h2', 'h3'])
+            if h1:
+                final_title = f"{title} (Section: {h1.get_text(strip=True)})"
+            else:
+                final_title = f"{title} (Section: {fragment_id})"
+
         context_data = {
             "source_url": self.source,
             "page_title": final_title,

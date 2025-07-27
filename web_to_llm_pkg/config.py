@@ -13,13 +13,15 @@ GITHUB_SCRAPER_IGNORE_CONFIG = {
         "vendor", "target", "build", "dist", "venv", "env", ".cache", "docs",
     ],
     "filenames": [
+        # Common metadata and config files
+        ".gitignore", ".editorconfig", ".ds_store", "thumbs.db",
         # Lock files
         "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
         "pipfile.lock", "cargo.lock", "composer.lock", "gemfile.lock", "go.sum",
-        # Common metadata
+        # Common docs (we'll ignore these by default, users can override with --include-dirs)
         "license", "license.md", "license.txt", "contributing.md",
         "contributors.md", "code_of_conduct.md", "security.md", "changelog.md",
-        "history.md", "authors.md", ".editorconfig", ".ds_store", "thumbs.db",
+        "history.md", "authors.md",
     ],
     "extensions": [
         # Compiled files, logs, and other non-source artifacts
