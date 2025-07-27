@@ -5,33 +5,96 @@ import re
 import tempfile
 import git
 from datetime import datetime, timezone
+from typing import Generator
 
 from .base_scraper import BaseScraper
-from ..utils import fetch_json_api
+from ..utils import fetch_json
 from ..config import GITHUB_SCRAPER_IGNORE_CONFIG
+
+LANGUAGE_MAP = {
+    '.py': 'python', '.js': 'javascript', '.ts': 'typescript', '.java': 'java', '.c': 'c', '.cpp': 'cpp', '.h': 'c',
+    '.cs': 'csharp', '.go': 'go', '.rs': 'rust', '.rb': 'ruby', '.php': 'php', '.html': 'html', '.css': 'css', '.scss': 'scss',
+    '.json': 'json', '.xml': 'xml', '.yaml': 'yaml', '.yml': 'yaml', '.md': 'markdown', '.sh': 'shell', '.ps1': 'powershell',
+    'dockerfile': 'dockerfile', 'makefile': 'makefile', '.txt': 'text'
+}
+
+def _is_text_file(filepath: str) -> bool:
+    """Determines if a file is likely a text file by trying to read it."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            f.read(1024) # Read a small chunk
+        return True
+    except (UnicodeDecodeError, IOError):
+        return False
+
+def _process_directory(
+    root_path: str,
+    include_dirs: list[str],
+    exclude_dirs: list[str]
+) -> tuple[str, str]:
+    """
+    Walks a directory, creating a file tree and concatenating the content of text files.
+    This is the core logic shared by both the GitHub and Local Folder scrapers.
+    """
+    file_tree_lines = []
+    concatenated_content_parts = []
+    ignore_config = GITHUB_SCRAPER_IGNORE_CONFIG
+    ignore_files_lower = {fn.lower() for fn in ignore_config["filenames"]}
+
+    # Determine the starting points for the walk
+    start_paths = [root_path]
+    if include_dirs:
+        start_paths = [os.path.join(root_path, d) for d in include_dirs if os.path.isdir(os.path.join(root_path, d))]
+        if not start_paths:
+            print(f"Warning: None of the specified --include-dirs exist: {include_dirs}")
+
+    for path in start_paths:
+        for dirpath, dirnames, filenames in os.walk(path, topdown=True):
+            # Filter directories in-place
+            dirnames[:] = [d for d in dirnames if d not in ignore_config["directories"] and d not in exclude_dirs]
+
+            relative_path = os.path.relpath(dirpath, root_path)
+            depth = relative_path.count(os.sep) if relative_path != '.' else 0
+            indent = "    " * depth
+
+            if relative_path != '.':
+                file_tree_lines.append(f"{indent}|-- {os.path.basename(dirpath)}/")
+            indent += "    "
+
+            for f in sorted(filenames):
+                file_path = os.path.join(dirpath, f)
+                _, extension = os.path.splitext(f)
+                if f.lower() in ignore_files_lower or extension in ignore_config["extensions"]:
+                    continue
+
+                file_tree_lines.append(f"{indent}|-- {f}")
+                if _is_text_file(file_path):
+                    try:
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file_content:
+                            content = file_content.read()
+
+                        relative_file_path = os.path.relpath(file_path, root_path)
+                        lang = LANGUAGE_MAP.get(extension, 'text')
+                        if f.lower() in LANGUAGE_MAP: # for Dockerfile, Makefile
+                            lang = LANGUAGE_MAP[f.lower()]
+
+                        concatenated_content_parts.append(
+                            f"\n---\n\n### `{relative_file_path}`\n\n```{lang}\n{content}\n```\n"
+                        )
+                    except Exception as e:
+                        print(f"Warning: Could not read file {file_path}: {e}")
+
+    return "\n".join(file_tree_lines), "".join(concatenated_content_parts)
+
 
 class GitHubScraper(BaseScraper):
     """
     Scrapes a GitHub repository by cloning it and extracting its content.
-    Supports allow-listing (--include-dirs) and block-listing (--exclude-dirs)
-    of specific directories for a focused scrape.
     """
-    LANGUAGE_MAP = {
-        '.py': 'python', '.js': 'javascript', '.ts': 'typescript', '.java': 'java', '.c': 'c', '.cpp': 'cpp', '.h': 'c',
-        '.cs': 'csharp', '.go': 'go', '.rs': 'rust', '.rb': 'ruby', '.php': 'php', '.html': 'html', '.css': 'css', '.scss': 'scss',
-        '.json': 'json', '.xml': 'xml', '.yaml': 'yaml', '.yml': 'yaml', '.md': 'markdown', '.sh': 'shell', '.ps1': 'powershell',
-        'dockerfile': 'dockerfile', 'makefile': 'makefile', '.txt': 'text'
-    }
-
-    def __init__(self, url: str, include_dirs: list[str] = None, exclude_dirs: list[str] = None):
-        """
-        Initializes the GitHub scraper.
-        """
-        super().__init__(url)
-        self.ignore_config = GITHUB_SCRAPER_IGNORE_CONFIG
-        self.ignore_config["filenames_lower"] = {fn.lower() for fn in self.ignore_config["filenames"]}
-        self.include_dirs = include_dirs or []
-        self.exclude_dirs = exclude_dirs or []
+    def __init__(self, url: str, include_dirs_str: str, exclude_dirs_str: str):
+        super().__init__(source=url)
+        self.include_dirs = [d.strip() for d in include_dirs_str.split(',') if d.strip()]
+        self.exclude_dirs = [d.strip() for d in exclude_dirs_str.split(',') if d.strip()]
 
     def scrape(self) -> tuple[str, dict]:
         """Clones the repo, processes its files, and returns the structured content."""
@@ -40,126 +103,35 @@ class GitHubScraper(BaseScraper):
             raise ValueError("Invalid GitHub URL format. Expected 'https://github.com/owner/repo'.")
 
         api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
-        repo_data = fetch_json_api(api_url)
-        
+        repo_data = fetch_json(api_url)
+
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_url = f"https://github.com/{owner}/{repo_name}.git"
             print(f"Cloning repository from {repo_url}...")
-            git.Repo.clone_from(repo_url, temp_dir)
+            git.Repo.clone_from(repo_url, temp_dir, depth=1) # shallow clone
             print("Clone successful.")
-            
-            file_tree, concatenated_content = self._process_repo(temp_dir)
+
+            file_tree, concatenated_content = _process_directory(temp_dir, self.include_dirs, self.exclude_dirs)
 
         front_matter = self._create_front_matter(repo_data)
         final_markdown = f"{front_matter}\n## Repository File Tree\n\n```\n{file_tree}\n```\n\n## File Contents\n\n{concatenated_content}"
-        context_data = repo_data
-        
-        return final_markdown, context_data
 
-    def _should_ignore(self, path: str, is_dir: bool) -> bool:
-        """
-        Checks if a path should be ignored based on static config or dynamic exclude list.
-        """
-        name = os.path.basename(path)
-        
-        if is_dir and name in self.exclude_dirs:
-            return True
-
-        if is_dir:
-            return name in self.ignore_config["directories"]
-        
-        name_lower = name.lower()
-        _, extension = os.path.splitext(name_lower)
-        
-        return (
-            name_lower in self.ignore_config["filenames_lower"] or
-            extension in self.ignore_config["extensions"]
-        )
-
-    def _process_repo(self, repo_path: str) -> tuple[str, str]:
-        """Walks the repo, builds a file tree, and concatenates text files."""
-        file_tree_lines = []
-        concatenated_content_parts = []
-
-        if self.include_dirs and self.exclude_dirs:
-            print("Warning: Both --include-dirs and --exclude-dirs are specified. "
-                  "--include-dirs will take precedence.")
-        
-        start_paths = [repo_path]
-        if self.include_dirs:
-            start_paths = []
-            for d in self.include_dirs:
-                path = os.path.join(repo_path, d)
-                if os.path.exists(path):
-                    start_paths.append(path)
-                else:
-                     print(f"Warning: Specified include directory does not exist: {d}")
-
-        for start_path in start_paths:
-            if self.include_dirs:
-                 file_tree_lines.append(f"|-- {os.path.basename(start_path)}/")
-                 
-            for root, dirs, files in os.walk(start_path, topdown=True):
-                dirs[:] = [d for d in dirs if not self._should_ignore(os.path.join(root, d), is_dir=True)]
-                
-                relative_root_to_start = os.path.relpath(root, start_path)
-                if relative_root_to_start == ".":
-                    level = 0
-                else:
-                    level = len(relative_root_to_start.split(os.sep))
-                
-                if self.include_dirs:
-                    level += 1
-                
-                indent = " " * 4 * level
-                
-                if root != start_path:
-                    dir_indent = " " * 4 * (level - 1)
-                    file_tree_lines.append(f"{dir_indent}|-- {os.path.basename(root)}/")
-
-                file_indent = " " * 4 * level
-
-                for f in sorted(files):
-                    file_path = os.path.join(root, f)
-                    if self._should_ignore(file_path, is_dir=False):
-                        continue
-                    
-                    file_tree_lines.append(f"{file_indent}|-- {f}")
-                    
-                    if self._is_text_file(file_path):
-                        try:
-                            with open(file_path, 'r', encoding='utf-8') as file_content:
-                                content = file_content.read()
-                            
-                            relative_file_path = os.path.relpath(file_path, repo_path)
-                            file_ext = os.path.splitext(f)[1]
-                            lang = self.LANGUAGE_MAP.get(file_ext, 'text')
-                            if os.path.basename(f).lower() in self.LANGUAGE_MAP:
-                                 lang = self.LANGUAGE_MAP.get(os.path.basename(f).lower())
-                                 
-                            concatenated_content_parts.append(
-                                f"\n---\n\n"
-                                f"### `{relative_file_path}`\n\n"
-                                f"```{lang}\n"
-                                f"{content}\n"
-                                f"```\n"
-                            )
-                        except Exception as e:
-                            print(f"Could not read file {file_path}: {e}")
-
-        return "\n".join(file_tree_lines), "".join(concatenated_content_parts)
+        # We'll use the API response as the context data
+        return final_markdown, repo_data
 
     def _parse_github_url(self) -> tuple[str | None, str | None]:
         """Extracts owner and repo name from the GitHub URL."""
-        match = re.search(r"github\.com/([^/]+)/([^/]+)", self.url)
+        match = re.search(r"github\.com/([^/]+)/([^/]+)", self.source)
         if match:
             return match.group(1), match.group(2).replace('.git', '')
         return None, None
 
     def _create_front_matter(self, data: dict) -> str:
         """Creates the YAML front matter string from GitHub API data."""
+        # Use .get() with default values for safety
         description_text = (data.get("description") or "No description available.").strip()
-        license_text = (data.get("license", {}).get("name") or "No license specified") if data.get("license") else "No license specified"
+        license_info = data.get("license")
+        license_text = license_info.get("name", "No license specified") if license_info else "No license specified"
 
         return (
             "---\n"
@@ -169,20 +141,7 @@ class GitHubScraper(BaseScraper):
             f'language: "{data.get("language", "N/A")}"\n'
             f'stars: {data.get("stargazers_count", 0)}\n'
             f'forks: {data.get("forks_count", 0)}\n'
-            f'watchers: {data.get("watchers_count", 0)}\n'
-            f'open_issues: {data.get("open_issues_count", 0)}\n'
             f'license: "{license_text}"\n'
-            f'created_at: "{data.get("created_at", "")}"\n'
-            f'last_pushed: "{data.get("pushed_at", "")}"\n'
             f'scraped_at: "{datetime.now(timezone.utc).isoformat()}"\n'
             "---\n"
         )
-    
-    def _is_text_file(self, filepath: str) -> bool:
-        """Determines if a file is likely a text file."""
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                f.read(1024)
-            return True
-        except (UnicodeDecodeError, IOError):
-            return False

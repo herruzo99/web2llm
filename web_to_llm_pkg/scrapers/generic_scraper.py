@@ -10,15 +10,16 @@ from .base_scraper import BaseScraper
 from ..utils import fetch_html
 from ..config import WEB_SCRAPER_CONFIG
 
+# Some sites have malformed HTML that generates this warning. It's safe to ignore.
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 class GenericScraper(BaseScraper):
     """
-    Scrapes a standard HTML webpage. Includes extensive debugging for fragment scraping.
+    Scrapes a standard HTML webpage, with special handling for content fragments.
     """
 
     def __init__(self, url: str):
-        super().__init__(url)
+        super().__init__(source=url)
         self.config = WEB_SCRAPER_CONFIG
 
     def _get_code_language(self, el: element.Tag) -> str:
@@ -67,7 +68,7 @@ class GenericScraper(BaseScraper):
         return links
 
     def scrape(self) -> tuple[str, dict]:
-        html = fetch_html(self.url)
+        html = fetch_html(self.source)
         soup = BeautifulSoup(html, 'lxml')
 
         title = soup.title.string.strip() if soup.title else "No Title Found"
@@ -76,7 +77,7 @@ class GenericScraper(BaseScraper):
         scraped_at = datetime.now(timezone.utc).isoformat()
 
         main_element = None
-        parsed_url = urlparse(self.url)
+        parsed_url = urlparse(self.source)
         fragment_id = parsed_url.fragment
 
         if fragment_id:
@@ -116,15 +117,15 @@ class GenericScraper(BaseScraper):
             if nav_element: break
         
         footer_element = soup.find('footer')
-        navigation_links = self._extract_links_recursive(nav_element, self.url)
-        footer_links = self._extract_flat_links(footer_element, self.url)
+        navigation_links = self._extract_links_recursive(nav_element, self.source)
+        footer_links = self._extract_flat_links(footer_element, self.source)
 
         final_title = title
         if fragment_id and main_element:
             final_title = f"{title} (Section: {fragment_id})"
         
         context_data = {
-            "source_url": self.url,
+            "source_url": self.source,
             "page_title": final_title,
             "scraped_at": scraped_at,
             "navigation_links": navigation_links,
@@ -134,7 +135,7 @@ class GenericScraper(BaseScraper):
         front_matter = (
             "---\n"
             f'title: "{final_title}"\n'
-            f'source_url: "{self.url}"\n'
+            f'source_url: "{self.source}"\n'
             f'description: "{description}"\n'
             f'scraped_at: "{scraped_at}"\n'
             "---\n\n"
@@ -149,7 +150,7 @@ class GenericScraper(BaseScraper):
             else: img.decompose()
         
         for a_tag in main_element.find_all('a', href=True):
-            a_tag['href'] = urljoin(self.url, a_tag['href'])
+            a_tag['href'] = urljoin(self.source, a_tag['href'])
         
         content_md = md(str(main_element), heading_style="ATX", bullets="*", code_language_callback=self._get_code_language)
         

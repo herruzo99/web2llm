@@ -5,12 +5,10 @@ from abc import ABC, abstractmethod
 class BaseScraper(ABC):
     """
     Abstract base class for all scraper implementations.
-
-    This class defines the "contract" that all scraper strategies must adhere to,
-    ensuring a consistent interface for the main application.
     """
-    def __init__(self, url: str):
-        self.url = url
+    def __init__(self, source: str):
+        # `source` can be a URL or a local file path.
+        self.source = source
 
     @abstractmethod
     def scrape(self) -> tuple[str, dict]:

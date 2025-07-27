@@ -1,17 +1,16 @@
 """
 The main entry point for the web_to_llm command-line application.
 
-This script handles parsing command-line arguments, determining if the target
-is a local path or a remote URL, selecting the appropriate scraper,
-orchestrating the scraping process, and saving the results to disk.
+This script orchestrates the scraping process:
+1. Parses command-line arguments.
+2. Uses the scraper factory to get the right scraper for the job.
+3. Calls the scraper to do the work.
+4. Saves the results to the output directory.
 """
 import argparse
-import os
 import sys
 
-from web_to_llm_pkg.scrapers import get_scraper_for_url
-from web_to_llm_pkg.scrapers.local_folder_scraper import LocalFolderScraper
-from web_to_llm_pkg.scrapers.local_pdf_scraper import LocalPDFScraper
+from web_to_llm_pkg.scrapers import get_scraper
 from web_to_llm_pkg.output import save_outputs
 
 def main():
@@ -30,63 +29,53 @@ def main():
                "  python main.py 'docs/research/paper.pdf' -o my-paper"
     )
     parser.add_argument("resource", help="The URL or local file/folder path to process.")
-    
+
     parser.add_argument(
         "-o", "--output-base",
         required=True,
         help="The base name for the output folder and files."
     )
-    
+
+    # These options are only used by the GitHub and Local Folder scrapers
     parser.add_argument(
         "--include-dirs",
         type=str,
         default="",
-        help="Comma-separated list of top-level directories to exclusively include.\n(for local folders or GitHub repos). This takes precedence over --exclude-dirs."
+        help="Comma-separated list of directories to include (repo/folder scrapers only)."
     )
-    
     parser.add_argument(
         "--exclude-dirs",
         type=str,
         default="",
-        help="Comma-separated list of top-level directories to exclude.\n(for local folders or GitHub repos)."
+        help="Comma-separated list of directories to exclude (repo/folder scrapers only)."
     )
 
     args = parser.parse_args()
-    
-    scraper = None
-    resource_path = os.path.expanduser(args.resource)
 
-    include_dirs = [d.strip() for d in args.include_dirs.split(',') if d.strip()]
-    exclude_dirs = [d.strip() for d in args.exclude_dirs.split(',') if d.strip()]
-
-    if os.path.exists(resource_path):
-        if os.path.isdir(resource_path):
-            scraper = LocalFolderScraper(
-                resource_path, 
-                include_dirs=include_dirs,
-                exclude_dirs=exclude_dirs
-            )
-        elif resource_path.lower().endswith('.pdf'):
-            scraper = LocalPDFScraper(resource_path)
-        else:
-            print(f"Error: Unsupported local file type: {resource_path}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        scraper = get_scraper_for_url(args.resource, args.include_dirs, args.exclude_dirs)
-    
-    if not scraper:
-         print(f"Error: Could not determine how to handle resource: {args.resource}", file=sys.stderr)
-         sys.exit(1)
-    
-    print(f"Using scraper: {scraper.__class__.__name__}")
-    
     try:
+        # The factory decides which scraper to use based on the resource string.
+        scraper = get_scraper(args.resource, args.include_dirs, args.exclude_dirs)
+
+        if not scraper:
+             print(f"Error: Could not determine how to handle resource: {args.resource}", file=sys.stderr)
+             sys.exit(1)
+
+        print(f"Using scraper: {scraper.__class__.__name__}")
+
         markdown_content, context_data = scraper.scrape()
+
+        save_outputs(args.output_base, markdown_content, context_data)
+
+    except (ValueError, FileNotFoundError, IOError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        print(f"An error occurred during scraping: {e}", file=sys.stderr)
-        return
-        
-    save_outputs(args.output_base, markdown_content, context_data)
+        # Catch-all for unexpected errors
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        # For debugging, you might want to re-raise or log the traceback
+        # import traceback
+        # traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
