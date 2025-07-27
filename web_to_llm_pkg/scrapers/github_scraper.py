@@ -26,8 +26,8 @@ def is_likely_text_file(filepath: str) -> bool:
 
 def _process_directory(
     root_path: str,
-    include_dirs: list[str],
-    exclude_dirs: list[str],
+    include_patterns: list,
+    exclude_patterns: list,
     include_all: bool = False
 ) -> tuple[str, str]:
     """
@@ -47,15 +47,25 @@ def _process_directory(
         ignore_extensions_set = set(CODE_IGNORE_CONFIG["extensions"])
 
     start_paths = [root_path]
-    if include_dirs:
-        start_paths = [os.path.join(root_path, d) for d in include_dirs if os.path.isdir(os.path.join(root_path, d))]
+    if include_patterns:
+        # Filter top-level directories against include patterns
+        top_level_dirs = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, d))]
+        matched_start_dirs = []
+        for d in top_level_dirs:
+            if any(p.match(d) for p in include_patterns):
+                matched_start_dirs.append(os.path.join(root_path, d))
+        
+        start_paths = matched_start_dirs
         if not start_paths:
-            print(f"Warning: None of the specified --include-dirs exist: {include_dirs}")
+            print(f"Warning: None of the top-level directories matched the --include-dirs patterns.")
 
     for path in start_paths:
         for dirpath, dirnames, filenames in os.walk(path, topdown=True):
-            # Filter directories in-place to prevent `os.walk` from descending into them.
-            dirnames[:] = [d for d in dirnames if d not in ignore_dirs_set and d not in exclude_dirs]
+            # Filter directories in-place using regex patterns
+            dirnames[:] = [
+                d for d in dirnames 
+                if d not in ignore_dirs_set and not any(p.match(d) for p in exclude_patterns)
+            ]
 
             relative_path = os.path.relpath(dirpath, root_path)
             
@@ -84,7 +94,7 @@ def _process_directory(
 
                         relative_file_path = os.path.relpath(file_path, root_path)
                         lang = LANGUAGE_MAP.get(extension, 'text')
-                        if f.lower() in LANGUAGE_MAP: # for Dockerfile, Makefile
+                        if f.lower() in LANGUAGE_MAP:
                             lang = LANGUAGE_MAP[f.lower()]
 
                         concatenated_content_parts.append(
@@ -100,8 +110,11 @@ class GitHubScraper(BaseScraper):
     """Scrapes a GitHub repository by cloning it and extracting its content."""
     def __init__(self, url: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
         super().__init__(source=url)
-        self.include_dirs = [d.strip() for d in include_dirs.split(',') if d.strip()]
-        self.exclude_dirs = [d.strip() for d in exclude_dirs.split(',') if d.strip()]
+        try:
+            self.include_patterns = [re.compile(p.strip()) for p in include_dirs.split(',') if p.strip()]
+            self.exclude_patterns = [re.compile(p.strip()) for p in exclude_dirs.split(',') if p.strip()]
+        except re.error as e:
+            raise ValueError(f"Invalid regex pattern provided: {e}")
         self.include_all = include_all
 
     def scrape(self) -> tuple[str, dict]:
@@ -118,7 +131,7 @@ class GitHubScraper(BaseScraper):
             git.Repo.clone_from(repo_url, temp_dir, depth=1) # shallow clone
             print("Clone successful.")
 
-            file_tree, concatenated_content = _process_directory(temp_dir, self.include_dirs, self.exclude_dirs, self.include_all)
+            file_tree, concatenated_content = _process_directory(temp_dir, self.include_patterns, self.exclude_patterns, self.include_all)
 
         front_matter = self._create_front_matter(repo_data)
         final_markdown = f"{front_matter}\n## Repository File Tree\n\n```\n{file_tree}\n```\n\n## File Contents\n\n{concatenated_content}"

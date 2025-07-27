@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timezone
 
 from .base_scraper import BaseScraper
@@ -11,8 +12,11 @@ class LocalFolderScraper(BaseScraper):
     """
     def __init__(self, path: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
         super().__init__(source=path)
-        self.include_dirs = [d.strip() for d in include_dirs.split(',') if d.strip()]
-        self.exclude_dirs = [d.strip() for d in exclude_dirs.split(',') if d.strip()]
+        try:
+            self.include_patterns = [re.compile(p.strip()) for p in include_dirs.split(',') if p.strip()]
+            self.exclude_patterns = [re.compile(p.strip()) for p in exclude_dirs.split(',') if p.strip()]
+        except re.error as e:
+            raise ValueError(f"Invalid regex pattern provided: {e}")
         self.include_all = include_all
 
     def scrape(self) -> tuple[str, dict]:
@@ -21,7 +25,7 @@ class LocalFolderScraper(BaseScraper):
 
         print(f"Processing local directory: {self.source}")
 
-        file_tree, concatenated_content = _process_directory(self.source, self.include_dirs, self.exclude_dirs, self.include_all)
+        file_tree, concatenated_content = _process_directory(self.source, self.include_patterns, self.exclude_patterns, self.include_all)
 
         scraped_at = datetime.now(timezone.utc).isoformat()
         folder_name = os.path.basename(os.path.normpath(self.source))

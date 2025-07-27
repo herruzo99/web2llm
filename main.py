@@ -11,8 +11,8 @@ def main():
         epilog="Examples:\n"
                "  # Scrape core source code of a GitHub repo\n"
                "  python main.py 'https://github.com/tiangolo/fastapi' -o fastapi-core --include-dirs fastapi\n\n"
-               "  # Scrape a local project, excluding docs and tests\n"
-               "  python main.py '~/projects/my-app' -o my-app-src --exclude-dirs docs,tests\n\n"
+               "  # Scrape a local project, excluding docs and tests using regex\n"
+               "  python main.py '~/projects/my-app' -o my-app-src --exclude-dirs '^(docs|tests)$'\n\n"
                "  # Scrape a specific section from a documentation page\n"
                "  python main.py 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs"
     )
@@ -28,7 +28,7 @@ def main():
         "--include-dirs",
         type=str,
         default="",
-        help="Comma-separated list of directories to include (for folder/repo scrapers)."
+        help="Comma-separated list of regex patterns for directories to include."
     )
     parser.add_argument(
         "--include-all",
@@ -39,7 +39,7 @@ def main():
         "--exclude-dirs",
         type=str,
         default="",
-        help="Comma-separated list of directories to exclude (for folder/repo scrapers)."
+        help="Comma-separated list of regex patterns for directories to exclude."
     )
 
     args = parser.parse_args()

@@ -38,6 +38,19 @@ def test_local_folder_scraper_respects_exclude_dirs(temp_project_dir):
     assert "### `src/main.py`" not in markdown
     assert "### `src/utils.py`" not in markdown
 
+def test_local_folder_scraper_respects_exclude_dirs_regex(temp_project_dir):
+    # Exclude any directory starting with 'd' or 's'
+    scraper = LocalFolderScraper(str(temp_project_dir), "", "^(d|s).*")
+    markdown, _ = scraper.scrape()
+
+    assert "### `README.md`" in markdown
+    assert "### `src/main.py`" not in markdown
+    assert "### `docs/guide.md`" not in markdown
+
+def test_local_folder_scraper_invalid_regex_raises_error(temp_project_dir):
+    with pytest.raises(ValueError, match="Invalid regex pattern"):
+        LocalFolderScraper(str(temp_project_dir), "", "[invalid-regex")
+
 def test_local_folder_scraper_includes_all_files_with_flag(temp_project_dir):
     scraper = LocalFolderScraper(str(temp_project_dir), "", "", include_all=True)
     markdown, _ = scraper.scrape()
