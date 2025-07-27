@@ -1,65 +1,65 @@
-# Web to LLM
+# Web-to-LLM
 
-A simple command-line tool to scrape web pages, GitHub repos, and local files into clean Markdown, suitable for feeding into a Large Language Model.
+[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/web-to-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/web-to-llm/actions/workflows/ci.yml)
 
-## Features
+A versatile command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
 
--   **Scrape any URL:** Pulls the main content from an article or documentation page.
--   **Target specific sections:** If you use a URL with a hash (e.g., `page.html#usage`), it will try to grab just that section.
--   **Scrape GitHub repos:** Clones a repository and concatenates its source files. You can specify which directories to include or exclude.
--   **Process local folders:** Works just like the GitHub scraper but on your local machine.
--   **Process PDFs:** Extracts text from local or remote PDF files. It can also pull metadata from arXiv abstract pages.
+## Description
 
-## Setup
+This tool provides a unified interface to process various sources—from live websites and code repositories to local files—and convert them into a structured Markdown format. The clean output is ideal for use as context in prompts for Large Language Models, for RAG (Retrieval-Augmented Generation) pipelines, or for documentation archiving.
 
+## Key Features
+
+-   **Scrape Any URL**: Pulls the main content from an article or documentation page, intelligently ignoring clutter like navbars and footers.
+-   **Target Specific Sections**: Use a URL with a hash (e.g., `page.html#usage`) to grab just that specific section of a webpage.
+-   **Scrape GitHub Repos**: Clones a repository and concatenates its source files into a single Markdown document, complete with a file tree.
+-   **Process Local Folders**: Scans a local directory and processes its contents just like the GitHub scraper.
+-   **Handle PDFs**: Extracts text from both local and remote PDF files. It includes special handling for arXiv papers to pull rich metadata from the abstract page.
+-   **Intelligent Filtering**: For codebases, the tool automatically ignores common non-source files (`.git`, `node_modules`, lockfiles, images), but you can customize this behavior with include/exclude flags.
+
+## Installation
+
+You can install `web-to-llm` directly from PyPI:
 ```bash
-git clone https://github.com/username/web-to-llm.git
-cd web-to-llm
-pip install -r requirements.txt
+pip install web-to-llm
 ```
 
-## How to Use
+## Usage
 
-The script is run from the command line. All output is saved to the output/ directory.
+The tool is run from the command line. The basic syntax is:
 ```bash
-python main.py <URL_OR_PATH> -o <OUTPUT_NAME> [OPTIONS]
+web-to-llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
 ```
+-   `<SOURCE>`: The URL or local path to scrape.
+-   `-o, --output`: The base name for the output folder and files (e.g., `my-project`).
+-   All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
+
 ### Examples
 
 **1. Scrape a GitHub repo (only the `fastapi` directory):**
 ```bash
-python main.py 'https://github.com/tiangolo/fastapi' -o fastapi-src --include-dirs fastapi
+web-to-llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include-dirs fastapi
 ```
 
 **2. Scrape a local project (excluding `docs` and `tests`):**
 ```bash
-python main.py '~/dev/my-project' -o my-project-code --exclude-dirs docs,tests
+web-to-llm '~/dev/my-project' -o my-project-code --exclude-dirs "docs,tests"
 ```
 
 **3. Scrape just one section of a webpage:**
 ```bash
-python main.py 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs
+web-to-llm 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs
 ```
 
-**4. Scrape a PDF from a URL:**
+**4. Scrape a PDF from an arXiv URL:**
 ```bash
-python main.py 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
+web-to-llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
 ```
-
-## Code Overview
-
- - main.py: CLI entry point. Chooses the right scraper for the job.
- - web_to_llm_pkg/scrapers/: Contains the different scraping strategies.
-  - generic_scraper.py: For standard web pages.
-  - github_scraper.py: For GitHub repos.
-  - local_folder_scraper.py: For local project directories.
-  - pdf_scraper.py: For local and remote PDFs.
-  - web_to_llm_pkg/config.py: Static configuration, like files to ignore and CSS selectors.
 
 ## Contributing
 
-Feel free to open an issue or submit a pull request if you have ideas for improvements.
+Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to set up the development environment and submit a pull request.
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
