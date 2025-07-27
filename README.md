@@ -1,6 +1,6 @@
 # Web-to-LLM
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/web-to-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/web-to-llm/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/herruzo99/web-to-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/herruzo99/web-to-llm/actions/workflows/ci.yml)
 
 A versatile command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
 

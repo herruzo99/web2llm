@@ -35,8 +35,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/YOUR_USERNAME/web-to-llm"
-"Bug Tracker" = "https://github.com/YOUR_USERNAME/web-to-llm/issues"
+Homepage = "https://github.com/herruzo99/web-to-llm"
+"Bug Tracker" = "https://github.com/herruzo99/web-to-llm/issues"
 
 [project.scripts]
 web-to-llm = "web_to_llm.cli:main"

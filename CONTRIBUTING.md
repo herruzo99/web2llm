@@ -15,7 +15,7 @@ To get started, you'll need a recent version of Python (3.9+).
 
 1.  **Clone the repository:**
     ___bash
-    git clone https://github.com/YOUR_USERNAME/web-to-llm.git
+    git clone https://github.com/herruzo99/web-to-llm.git
     cd web-to-llm
     ___
 
