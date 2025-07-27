@@ -1,9 +1,5 @@
 """
-Scraper Factory Module
-
-This module contains the unified factory function `get_scraper`, which is the
-primary entry point for selecting the correct scraping strategy for any given
-resource, whether it's a local path or a remote URL.
+Scraper Factory: selects the correct scraping strategy for a given source.
 """
 import os
 from urllib.parse import urlparse
@@ -15,37 +11,31 @@ from .local_folder_scraper import LocalFolderScraper
 from .pdf_scraper import PDFScraper
 from ..utils import get_url_content_type
 
-def get_scraper(resource: str, include_dirs_str: str = "", exclude_dirs_str: str = "") -> BaseScraper | None:
-    """
-    Selects the appropriate scraper class for a given resource.
-
-    This function inspects the resource string to determine if it's a local
-    path or a URL and then chooses the best scraper for the job.
-    """
-    # First, sanitize and check if it's a local path.
-    # This is more reliable than just checking for "http"
-    resource_path = os.path.expanduser(resource)
-    if os.path.exists(resource_path):
-        if os.path.isdir(resource_path):
-            return LocalFolderScraper(resource_path, include_dirs_str, exclude_dirs_str)
-        elif resource_path.lower().endswith('.pdf'):
-            return PDFScraper(resource_path)
+def get_scraper(source: str, include_dirs: str = "", exclude_dirs: str = "") -> BaseScraper | None:
+    """Selects the appropriate scraper class for a given source (URL or local path)."""
+    
+    # Check if it's a local path first.
+    source_path = os.path.expanduser(source)
+    if os.path.exists(source_path):
+        if os.path.isdir(source_path):
+            return LocalFolderScraper(source_path, include_dirs, exclude_dirs)
+        elif source_path.lower().endswith('.pdf'):
+            return PDFScraper(source_path)
         else:
-            # We could eventually support local .html files here.
-            raise ValueError(f"Unsupported local file type: {resource_path}")
+            raise ValueError(f"Unsupported local file type: {source_path}")
 
-    # If it's not a local path, treat it as a URL.
-    parsed_url = urlparse(resource)
+    # If not a local path, treat it as a URL.
+    parsed_url = urlparse(source)
     if not all([parsed_url.scheme, parsed_url.netloc]):
-        raise ValueError(f"Invalid URL or non-existent local path: {resource}")
+        raise ValueError(f"Invalid URL or non-existent local path: {source}")
 
     if "github.com" in parsed_url.netloc:
-        return GitHubScraper(resource, include_dirs_str, exclude_dirs_str)
+        return GitHubScraper(source, include_dirs, exclude_dirs)
 
     # For other URLs, check the content-type to see if it's a PDF.
-    content_type = get_url_content_type(resource)
+    content_type = get_url_content_type(source)
     if content_type and 'application/pdf' in content_type:
-        return PDFScraper(resource)
+        return PDFScraper(source)
 
-    # If all else fails, assume it's a standard HTML page.
-    return GenericScraper(resource)
+    # Default to the generic HTML scraper.
+    return GenericScraper(source)

@@ -1,20 +1,11 @@
 """Handles the creation of output files and directories."""
-
 import json
 import os
 import sys
 
 def save_outputs(output_base: str, markdown_content: str, context_data: dict):
     """
-    Saves the generated content to a dedicated output folder.
-
-    Creates a directory `output/<output_base>/` and writes the main
-    markdown content and the JSON context file inside it.
-
-    Args:
-        output_base: The base name for the output folder and files.
-        markdown_content: The string content for the .md file.
-        context_data: The dictionary content for the .json file.
+    Saves generated content to `output/<output_base>/`.
     """
     try:
         output_dir = os.path.join("output", output_base)
@@ -32,6 +23,6 @@ def save_outputs(output_base: str, markdown_content: str, context_data: dict):
         print(f"Successfully created context file: {json_filename}")
 
     except IOError as e:
-        raise IOError(f"Could not write to output directory '{output_dir}'. Please check permissions. Original error: {e}")
+        raise IOError(f"Could not write to output directory '{output_dir}'. Please check permissions. Error: {e}")
     except Exception as e:
         print(f"An unexpected error occurred during file output: {e}", file=sys.stderr)

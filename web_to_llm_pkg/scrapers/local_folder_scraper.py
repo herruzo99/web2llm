@@ -1,23 +1,20 @@
-"""A scraper for processing a local directory structure."""
-
 import os
 from datetime import datetime, timezone
 
 from .base_scraper import BaseScraper
-from .github_scraper import _process_directory # Import the shared logic
+from .github_scraper import _process_directory
 
 class LocalFolderScraper(BaseScraper):
     """
     Scrapes a local folder, reusing the file processing and filtering logic
     from the GitHubScraper.
     """
-    def __init__(self, path: str, include_dirs_str: str, exclude_dirs_str: str):
+    def __init__(self, path: str, include_dirs: str, exclude_dirs: str):
         super().__init__(source=path)
-        self.include_dirs = [d.strip() for d in include_dirs_str.split(',') if d.strip()]
-        self.exclude_dirs = [d.strip() for d in exclude_dirs_str.split(',') if d.strip()]
+        self.include_dirs = [d.strip() for d in include_dirs.split(',') if d.strip()]
+        self.exclude_dirs = [d.strip() for d in exclude_dirs.split(',') if d.strip()]
 
     def scrape(self) -> tuple[str, dict]:
-        """Processes the local folder and returns its structured content."""
         if not os.path.isdir(self.source):
             raise NotADirectoryError(f"The provided path is not a directory: {self.source}")
 
