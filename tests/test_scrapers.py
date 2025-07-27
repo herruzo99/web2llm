@@ -1,10 +1,10 @@
 import pytest
-from web_to_llm.scrapers import LocalFolderScraper, GitHubScraper, GenericScraper, PDFScraper
+from web2llm.scrapers import LocalFolderScraper, GitHubScraper, GenericScraper, PDFScraper
 from unittest.mock import patch, MagicMock
 
 def run_scraper_on_html(mocker, html: str, url: str) -> str:
     """Helper to mock fetch_html and run the GenericScraper."""
-    mocker.patch('web_to_llm.scrapers.generic_scraper.fetch_html', return_value=html)
+    mocker.patch('web2llm.scrapers.generic_scraper.fetch_html', return_value=html)
     scraper = GenericScraper(url)
     markdown, _ = scraper.scrape()
     return markdown
@@ -74,9 +74,9 @@ def test_local_folder_scraper_with_include_all_respects_exclude_dirs(temp_projec
 # --- GitHubScraper Tests ---
 
 def test_github_scraper_assembles_correct_markdown(mocker, mock_github_api_response):
-    mocker.patch('web_to_llm.scrapers.github_scraper.fetch_json', return_value=mock_github_api_response)
+    mocker.patch('web2llm.scrapers.github_scraper.fetch_json', return_value=mock_github_api_response)
     mock_clone = mocker.patch('git.Repo.clone_from')
-    mocker.patch('web_to_llm.scrapers.github_scraper._process_directory',
+    mocker.patch('web2llm.scrapers.github_scraper._process_directory',
                  return_value=("file_tree_placeholder", "concatenated_content_placeholder"))
 
     scraper = GitHubScraper("https://github.com/test-owner/test-repo", "", "")
@@ -175,7 +175,7 @@ def test_pdf_scraper_handles_local_file(mocker):
     mock_pdf.pages = [mock_page]
     mock_pdf.metadata = {"Title": "My Test PDF"}
 
-    mock_pdf_open = mocker.patch('web_to_llm.scrapers.pdf_scraper.pdfplumber.open')
+    mock_pdf_open = mocker.patch('web2llm.scrapers.pdf_scraper.pdfplumber.open')
     mock_pdf_open.return_value.__enter__.return_value = mock_pdf
     
     mocker.patch('os.path.isfile', return_value=True)

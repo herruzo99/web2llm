@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-from web_to_llm.scrapers import get_scraper
-from web_to_llm.output import save_outputs
+from web2llm.scrapers import get_scraper
+from web2llm.output import save_outputs
 
 def main():
     parser = argparse.ArgumentParser(

@@ -1,6 +1,6 @@
-# Web-to-LLM
+# Web2LLM
 
-[![CI/CD Pipeline](https://github.com/herruzo99/web-to-llm/actions/workflows/ci.yml/badge.svg)](https://github.com/herruzo99/web-to-llm/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml/badge.svg)](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml)
 
 A versatile command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
 
@@ -19,16 +19,16 @@ This tool provides a unified interface to process various sources—from live we
 
 ## Installation
 
-You can install `web-to-llm` directly from PyPI:
+You can install `web2llm` directly from PyPI (once published) or from source:
 ```bash
-pip install web-to-llm
+pip install web2llm
 ```
 
 ## Usage
 
 The tool is run from the command line. The basic syntax is:
 ```bash
-web-to-llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
+web2llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
 ```
 -   `<SOURCE>`: The URL or local path to scrape.
 -   `-o, --output`: The base name for the output folder and files (e.g., `my-project`).
@@ -38,22 +38,22 @@ web-to-llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
 
 **1. Scrape a GitHub repo (only the `fastapi` directory):**
 ```bash
-web-to-llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include-dirs fastapi
+web2llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include-dirs fastapi
 ```
 
 **2. Scrape a local project (excluding `docs` and `tests`):**
 ```bash
-web-to-llm '~/dev/my-project' -o my-project-code --exclude-dirs "docs,tests"
+web2llm '~/dev/my-project' -o my-project-code --exclude-dirs "docs,tests"
 ```
 
 **3. Scrape just one section of a webpage:**
 ```bash
-web-to-llm 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs
+web2llm 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs
 ```
 
 **4. Scrape a PDF from an arXiv URL:**
 ```bash
-web-to-llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
+web2llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
 ```
 
 ## Contributing

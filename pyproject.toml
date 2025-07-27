@@ -1,5 +1,5 @@
 [project]
-name = "web-to-llm"
+name = "web2llm"
 version = "0.1.0"
 description = "A tool to scrape web content into clean Markdown for LLMs."
 authors = [
@@ -35,11 +35,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/herruzo99/web-to-llm"
-"Bug Tracker" = "https://github.com/herruzo99/web-to-llm/issues"
+Homepage = "https://github.com/herruzo99/web2llm"
+"Bug Tracker" = "https://github.com/herruzo99/web2llm/issues"
 
 [project.scripts]
-web-to-llm = "web_to_llm.cli:main"
+web2llm = "web2llm.cli:main"
 
 [project.optional-dependencies]
 test = [
@@ -53,7 +53,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["web_to_llm*"]
+include = ["web2llm*"]
 exclude = ["tests*"]
 
 [tool.ruff]

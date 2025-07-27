@@ -1,4 +1,4 @@
-# Contributing to Web-to-LLM
+# Contributing to Web2LLM
 
 First off, thank you for considering contributing! This project is made better by the community.
 
@@ -15,8 +15,8 @@ To get started, you'll need a recent version of Python (3.9+).
 
 1.  **Clone the repository:**
     ___bash
-    git clone https://github.com/herruzo99/web-to-llm.git
-    cd web-to-llm
+    git clone https://github.com/herruzo99/web2llm.git
+    cd web2llm
     ___
 
 2.  **Create and activate a virtual environment:**
