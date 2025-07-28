@@ -57,7 +57,7 @@ include = ["web2llm*"]
 exclude = ["tests*"]
 
 [tool.ruff]
-line-length = 88
+line-length = 140
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
