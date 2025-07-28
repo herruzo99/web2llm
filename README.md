@@ -2,63 +2,92 @@
 
 [![CI/CD Pipeline](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml/badge.svg)](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml)
 
-A command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
+A command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean, aggregated Markdown suitable for Large Language Models.
 
 ## Description
 
-This tool provides a unified interface to process various sources, from live websites and code repositories to local files, and convert them into a structured Markdown format. The clean output is ideal for use as context in prompts for Large Language Models, for RAG (Retrieval-Augmented Generation) pipelines, or for documentation archiving. As it reduces dramatically the number of tokens compared to raw html.
+This tool provides a unified interface to process various sources—from live websites and code repositories to local directories and PDF files—and convert them into a structured Markdown format. The clean, token-efficient output is ideal for use as context in prompts for Large Language Models, for Retrieval-Augmented Generation (RAG) pipelines, or for documentation archiving.
 
 ## Key Features
 
--   **Scrape Any URL**: Pulls the main content from an article or documentation page, intelligently ignoring clutter like navbars and footers.
--   **Target Specific Sections**: Use a URL with a hash (e.g., `page.html#usage`) to grab just that specific section of a webpage.
--   **Scrape GitHub Repos**: Clones a repository and concatenates its source files into a single Markdown document, complete with a file tree.
--   **Process Local Folders**: Scans a local directory and processes its contents just like the GitHub scraper.
--   **Handle PDFs**: Extracts text from both local and remote PDF files. It includes special handling for arXiv papers to pull rich metadata from the abstract page.
--   **Intelligent Filtering**: For codebases, the tool automatically ignores common non-source files (`.git`, `node_modules`, lockfiles, images), but you can customize this behavior with include/exclude flags.
+-   **Multi-Source Scraping**: Handles public web pages, GitHub repositories, local project folders, and both local and remote PDF files.
+-   **Content-Aware Extraction**: For web pages, it intelligently identifies and extracts the main content, ignoring common clutter like navigation bars, sidebars, and footers.
+-   **Targeted Section Scraping**: Use a URL with a hash fragment (e.g., `page.html#usage`) to scrape just that specific section of a webpage.
+-   **Code-Aware Filesystem Processing**: For GitHub repos and local folders, it generates a file tree and concatenates all text-based source files into a single document, complete with syntax highlighting hints.
+-   **Intelligent & Extensible Filtering**: Automatically ignores common non-source files (`.git`, `node_modules`, lockfiles, images) using a comprehensive set of default `.gitignore`-style patterns.
+-   **Advanced Configuration**: Customize scraping behavior by placing a `.web2llm.yaml` file in your project root to override default settings or by using command-line flags for on-the-fly adjustments.
+-   **Specialized PDF Handling**: Extracts text from PDFs and includes special logic for arXiv papers to pull structured metadata (title, abstract) from the landing page.
 
 ## Installation
 
-You can install `web2llm` directly from PyPI (once published) or from source:
-```bash
+___bash
 pip install web2llm
-```
+___
 
 ## Usage
 
-The tool is run from the command line. The basic syntax is:
-```bash
+### Command-Line Interface
+
+The tool is run from the command line with the following structure:
+
+___bash
 web2llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
-```
+___
+
 -   `<SOURCE>`: The URL or local path to scrape.
--   `-o, --output`: The base name for the output folder and files (e.g., `my-project`).
--   All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
+-   `-o, --output`: The base name for the output folder and the `.md` and `.json` files created inside it.
 
-### Examples
+All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
 
-**1. Scrape a GitHub repo (only the `fastapi` directory):**
-```bash
-web2llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include-dirs fastapi
-```
+#### Filesystem Options (For GitHub & Local Folders):
 
-**2. Scrape a local project (excluding `docs` and `tests`):**
-```bash
-web2llm '~/dev/my-project' -o my-project-code --exclude-dirs "docs,tests"
-```
+-   `--exclude <PATTERN>`: A `.gitignore`-style pattern for files/directories to exclude. This flag can be used multiple times. (e.g., `--exclude 'docs/' --exclude '*.log'`).
+-   `--include <PATTERN>`: A pattern to re-include a file that would otherwise be ignored by default or by an `--exclude` rule. This is typically a negation pattern. Can be used multiple times. (e.g., `--include '!LICENSE'`).
+-   `--include-all`: Disables all default and project-level ignore patterns, processing every text file encountered. Explicit `--exclude` flags are still respected.
 
-**3. Scrape just one section of a webpage:**
-```bash
-web2llm 'https://nixos.org/manual/nixpkgs/stable/#rust' -o nix-rust-docs
-```
+### Configuration
 
-**4. Scrape a PDF from an arXiv URL:**
-```bash
+`web2llm` uses a hierarchical configuration system that gives you precise control over the scraping process:
+
+1.  **Default Config**: The tool comes with a built-in `default_config.yaml` containing a robust set of ignore patterns for common development files and selectors for web scraping.
+2.  **Project-Specific Config**: You can create a `.web2llm.yaml` file in the root of your project to override or extend the default settings. This is the recommended way to manage project-specific rules (e.g., ignoring a `dist` folder or a custom log file).
+3.  **CLI Arguments**: Flags like `--exclude` and `--include-all` provide the final layer of control, overriding any settings from the configuration files for a single run.
+
+## Examples
+
+**1. Scrape a specific directory within a GitHub repo:**
+___bash
+web2llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include 'fastapi/'
+___
+
+**2. Scrape a local project, excluding test and documentation folders:**
+___bash
+web2llm '~/dev/my-project' -o my-project-code --exclude 'tests/' --exclude 'docs/'
+___
+
+**3. Scrape a local project but re-include the `LICENSE` file, which is ignored by default:**
+___bash
+web2llm '.' -o my-project-with-license --include '!LICENSE'
+___
+
+**4. Scrape everything in a project except the `.git` directory:**
+___bash
+web2llm . -o my-project-full --include-all --exclude '.git/'
+___
+
+**5. Scrape just the "Installation" section from a webpage:**
+___bash
+web2llm 'https://fastapi.tiangolo.com/#installation' -o fastapi-install
+___
+
+**6. Scrape a PDF from an arXiv URL:**
+___bash
 web2llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
-```
+___
 
 ## Contributing
 
-Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to set up the development environment and submit a pull request.
+Contributions are welcome. Please refer to the project's issue tracker and contribution guidelines for information on how to participate.
 
 ## License
 
