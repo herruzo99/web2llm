@@ -20,9 +20,9 @@ This tool provides a unified interface to process various sources—from live we
 
 ## Installation
 
-___bash
+```bash
 pip install web2llm
-___
+```
 
 ## Usage
 
@@ -30,9 +30,9 @@ ___
 
 The tool is run from the command line with the following structure:
 
-___bash
+```bash
 web2llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
-___
+```
 
 -   `<SOURCE>`: The URL or local path to scrape.
 -   `-o, --output`: The base name for the output folder and the `.md` and `.json` files created inside it.
@@ -56,34 +56,34 @@ All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
 ## Examples
 
 **1. Scrape a specific directory within a GitHub repo:**
-___bash
+```bash
 web2llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include 'fastapi/'
-___
+```
 
 **2. Scrape a local project, excluding test and documentation folders:**
-___bash
+```bash
 web2llm '~/dev/my-project' -o my-project-code --exclude 'tests/' --exclude 'docs/'
-___
+```
 
 **3. Scrape a local project but re-include the `LICENSE` file, which is ignored by default:**
-___bash
+```bash
 web2llm '.' -o my-project-with-license --include '!LICENSE'
-___
+```
 
 **4. Scrape everything in a project except the `.git` directory:**
-___bash
+```bash
 web2llm . -o my-project-full --include-all --exclude '.git/'
-___
+```
 
 **5. Scrape just the "Installation" section from a webpage:**
-___bash
+```bash
 web2llm 'https://fastapi.tiangolo.com/#installation' -o fastapi-install
-___
+```
 
 **6. Scrape a PDF from an arXiv URL:**
-___bash
+```bash
 web2llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
-___
+```
 
 ## Contributing
 
