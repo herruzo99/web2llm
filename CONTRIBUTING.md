@@ -38,7 +38,7 @@ To get started, you'll need a recent version of Python (3.9+).
 
 ## Running Quality Checks
 
-To maintain code quality, we use `ruff` for linting/formatting and `pytest` for testing. The most professional and standard way to use these tools is with **pre-commit hooks**, which automatically run checks before you create a commit.
+To maintain code quality, we use `ruff` for linting/formatting and `pytest` for testing. The way to use these tools is with **pre-commit hooks**, which automatically run checks before you create a commit.
 
 ### The Recommended Way: Pre-Commit Hooks
 
