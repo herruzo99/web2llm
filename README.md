@@ -2,11 +2,11 @@
 
 [![CI/CD Pipeline](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml/badge.svg)](https://github.com/herruzo99/web2llm/actions/workflows/ci.yml)
 
-A versatile command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
+A command-line tool to scrape web pages, GitHub repos, local folders, and PDFs into clean Markdown, optimized for Large Language Models.
 
 ## Description
 
-This tool provides a unified interface to process various sources—from live websites and code repositories to local files—and convert them into a structured Markdown format. The clean output is ideal for use as context in prompts for Large Language Models, for RAG (Retrieval-Augmented Generation) pipelines, or for documentation archiving.
+This tool provides a unified interface to process various sources, from live websites and code repositories to local files, and convert them into a structured Markdown format. The clean output is ideal for use as context in prompts for Large Language Models, for RAG (Retrieval-Augmented Generation) pipelines, or for documentation archiving. As it reduces dramatically the number of tokens compared to raw html.
 
 ## Key Features
 
