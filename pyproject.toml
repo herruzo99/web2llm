@@ -1,14 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "web2llm"
 version = "0.2.0"
 description = "A tool to scrape web content into clean Markdown for LLMs."
 authors = [
-  { name = "Your Name", email = "your.email@example.com" },
+  { name = "Juan Herruzo", email = "juan@herruzo.dev" },
 ]
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
-keywords = ["scraper", "llm", "markdown", "web scraping", "pdf", "github"]
+license = { text = "MIT License" }
+keywords = ["scraper", "llm", "markdown", "web scraping", "pdf", "github", "rag"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
@@ -16,7 +20,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Text Processing",
