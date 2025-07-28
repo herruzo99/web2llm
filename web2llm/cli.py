@@ -47,9 +47,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        scraper = get_scraper(
-            args.source, args.include_dirs, args.exclude_dirs, args.include_all
-        )
+        scraper = get_scraper(args.source, args.include_dirs, args.exclude_dirs, args.include_all)
 
         if not scraper:
             print(

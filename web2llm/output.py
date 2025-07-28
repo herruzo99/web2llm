@@ -25,8 +25,6 @@ def save_outputs(output_base: str, markdown_content: str, context_data: dict):
         print(f"Successfully created context file: {json_filename}")
 
     except IOError as e:
-        raise IOError(
-            f"Could not write to output directory '{output_dir}'. Please check permissions. Error: {e}"
-        )
+        raise IOError(f"Could not write to output directory '{output_dir}'. Please check permissions. Error: {e}")
     except Exception as e:
         print(f"An unexpected error occurred during file output: {e}", file=sys.stderr)

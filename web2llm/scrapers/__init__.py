@@ -25,9 +25,7 @@ def get_scraper(
     source_path = os.path.expanduser(source)
     if os.path.exists(source_path):
         if os.path.isdir(source_path):
-            return LocalFolderScraper(
-                source_path, include_dirs, exclude_dirs, include_all
-            )
+            return LocalFolderScraper(source_path, include_dirs, exclude_dirs, include_all)
         elif source_path.lower().endswith(".pdf"):
             return PDFScraper(source_path)
         else:

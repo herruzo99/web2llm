@@ -59,9 +59,7 @@ class GenericScraper(BaseScraper):
                         "href": urljoin(base_url, link_tag["href"]),
                     }
                     if nested_list:
-                        link_data["children"] = self._extract_links_recursive(
-                            nested_list, base_url
-                        )
+                        link_data["children"] = self._extract_links_recursive(nested_list, base_url)
                     links.append(link_data)
             elif nested_list:
                 links.extend(self._extract_links_recursive(nested_list, base_url))
@@ -127,11 +125,7 @@ class GenericScraper(BaseScraper):
 
         title = soup.title.string.strip() if soup.title else "No Title Found"
         description_tag = soup.find("meta", attrs={"name": "description"})
-        description = (
-            description_tag["content"].strip()
-            if description_tag and description_tag.get("content")
-            else ""
-        )
+        description = description_tag["content"].strip() if description_tag and description_tag.get("content") else ""
 
         main_element = None
         parsed_url = urlparse(self.source)
@@ -157,12 +151,7 @@ class GenericScraper(BaseScraper):
         scraped_at = datetime.now(timezone.utc).isoformat()
 
         front_matter = (
-            "---\n"
-            f'title: "{final_title}"\n'
-            f'source_url: "{self.source}"\n'
-            f'description: "{description}"\n'
-            f'scraped_at: "{scraped_at}"\n'
-            "---\n\n"
+            f'---\ntitle: "{final_title}"\nsource_url: "{self.source}"\ndescription: "{description}"\nscraped_at: "{scraped_at}"\n---\n\n'
         )
 
         nav_element = None

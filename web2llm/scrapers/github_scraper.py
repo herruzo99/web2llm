@@ -73,11 +73,7 @@ def _process_directory(
     start_paths = [root_path]
     if include_patterns:
         # Filter top-level directories against include patterns
-        top_level_dirs = [
-            d
-            for d in os.listdir(root_path)
-            if os.path.isdir(os.path.join(root_path, d))
-        ]
+        top_level_dirs = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, d))]
         matched_start_dirs = []
         for d in top_level_dirs:
             if any(p.match(d) for p in include_patterns):
@@ -85,19 +81,12 @@ def _process_directory(
 
         start_paths = matched_start_dirs
         if not start_paths:
-            print(
-                "Warning: None of the top-level directories matched the --include-dirs patterns."
-            )
+            print("Warning: None of the top-level directories matched the --include-dirs patterns.")
 
     for path in start_paths:
         for dirpath, dirnames, filenames in os.walk(path, topdown=True):
             # Filter directories in-place using regex patterns
-            dirnames[:] = [
-                d
-                for d in dirnames
-                if d not in ignore_dirs_set
-                and not any(p.match(d) for p in exclude_patterns)
-            ]
+            dirnames[:] = [d for d in dirnames if d not in ignore_dirs_set and not any(p.match(d) for p in exclude_patterns)]
 
             relative_path = os.path.relpath(dirpath, root_path)
 
@@ -115,18 +104,13 @@ def _process_directory(
             for f in sorted(filenames):
                 file_path = os.path.join(dirpath, f)
                 _, extension = os.path.splitext(f)
-                if (
-                    f.lower() in ignore_files_lower
-                    or extension in ignore_extensions_set
-                ):
+                if f.lower() in ignore_files_lower or extension in ignore_extensions_set:
                     continue
 
                 file_tree_lines.append(f"{files_indent}|-- {f}")
                 if is_likely_text_file(file_path):
                     try:
-                        with open(
-                            file_path, "r", encoding="utf-8", errors="ignore"
-                        ) as file_content:
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as file_content:
                             content = file_content.read()
 
                         relative_file_path = os.path.relpath(file_path, root_path)
@@ -134,9 +118,7 @@ def _process_directory(
                         if f.lower() in LANGUAGE_MAP:
                             lang = LANGUAGE_MAP[f.lower()]
 
-                        concatenated_content_parts.append(
-                            f"\n---\n\n### `{relative_file_path}`\n\n```{lang}\n{content}\n```\n"
-                        )
+                        concatenated_content_parts.append(f"\n---\n\n### `{relative_file_path}`\n\n```{lang}\n{content}\n```\n")
                     except Exception as e:
                         print(f"Warning: Could not read file {file_path}: {e}")
 
@@ -146,17 +128,11 @@ def _process_directory(
 class GitHubScraper(BaseScraper):
     """Scrapes a GitHub repository by cloning it and extracting its content."""
 
-    def __init__(
-        self, url: str, include_dirs: str, exclude_dirs: str, include_all: bool = False
-    ):
+    def __init__(self, url: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
         super().__init__(source=url)
         try:
-            self.include_patterns = [
-                re.compile(p.strip()) for p in include_dirs.split(",") if p.strip()
-            ]
-            self.exclude_patterns = [
-                re.compile(p.strip()) for p in exclude_dirs.split(",") if p.strip()
-            ]
+            self.include_patterns = [re.compile(p.strip()) for p in include_dirs.split(",") if p.strip()]
+            self.exclude_patterns = [re.compile(p.strip()) for p in exclude_dirs.split(",") if p.strip()]
         except re.error as e:
             raise ValueError(f"Invalid regex pattern provided: {e}")
         self.include_all = include_all
@@ -164,9 +140,7 @@ class GitHubScraper(BaseScraper):
     def scrape(self) -> tuple[str, dict]:
         owner, repo_name = self._parse_github_url()
         if not owner or not repo_name:
-            raise ValueError(
-                "Invalid GitHub URL format. Expected 'https://github.com/owner/repo'."
-            )
+            raise ValueError("Invalid GitHub URL format. Expected 'https://github.com/owner/repo'.")
 
         api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
         repo_data = fetch_json(api_url)
@@ -177,9 +151,7 @@ class GitHubScraper(BaseScraper):
             git.Repo.clone_from(repo_url, temp_dir, depth=1)  # shallow clone
             print("Clone successful.")
 
-            file_tree, concatenated_content = _process_directory(
-                temp_dir, self.include_patterns, self.exclude_patterns, self.include_all
-            )
+            file_tree, concatenated_content = _process_directory(temp_dir, self.include_patterns, self.exclude_patterns, self.include_all)
 
         front_matter = self._create_front_matter(repo_data)
         final_markdown = f"{front_matter}\n## Repository File Tree\n\n```\n{file_tree}\n```\n\n## File Contents\n\n{concatenated_content}"
@@ -195,9 +167,7 @@ class GitHubScraper(BaseScraper):
     def _create_front_matter(self, data: dict) -> str:
         description_text = (data.get("description") or "").strip()
         license_info = data.get("license")
-        license_text = (
-            license_info.get("name") if license_info else "No license specified"
-        )
+        license_text = license_info.get("name") if license_info else "No license specified"
 
         return (
             "---\n"

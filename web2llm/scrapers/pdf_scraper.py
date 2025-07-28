@@ -26,9 +26,7 @@ class PDFScraper(BaseScraper):
                 max_size = obj["size"]
 
         if max_size > 0:
-            title_candidates = [
-                obj["text"] for obj in first_page.chars if obj.get("size") == max_size
-            ]
+            title_candidates = [obj["text"] for obj in first_page.chars if obj.get("size") == max_size]
             largest_text = "".join(title_candidates).strip()
 
         return largest_text
@@ -44,9 +42,7 @@ class PDFScraper(BaseScraper):
 
             title_tag = soup.select_one("h1.title")
             if title_tag:
-                metadata["title"] = (
-                    title_tag.get_text(strip=True).replace("Title:", "").strip()
-                )
+                metadata["title"] = title_tag.get_text(strip=True).replace("Title:", "").strip()
 
             desc_tag = soup.select_one("blockquote.abstract")
             if desc_tag:

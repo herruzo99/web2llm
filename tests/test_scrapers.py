@@ -190,9 +190,7 @@ def test_scraper_handles_missing_fragment(mocker):
         ),
     ],
 )
-def test_fragment_scraping_scenarios(
-    mocker, test_id, html, fragment, expected, forbidden
-):
+def test_fragment_scraping_scenarios(mocker, test_id, html, fragment, expected, forbidden):
     url = f"http://example.com/{fragment}"
     full_html = f"<html><head><title>Test Page</title></head><body>{html}</body></html>"
     markdown = run_scraper_on_html(mocker, full_html, url)
@@ -201,14 +199,10 @@ def test_fragment_scraping_scenarios(
     content = markdown.split("---", 2)[2]
 
     for text in expected:
-        assert text in content, (
-            f'"{text}" was expected but not found in test "{test_id}"'
-        )
+        assert text in content, f'"{text}" was expected but not found in test "{test_id}"'
 
     for text in forbidden:
-        assert text not in content, (
-            f'"{text}" was forbidden but found in test "{test_id}"'
-        )
+        assert text not in content, f'"{text}" was forbidden but found in test "{test_id}"'
 
 
 # --- PDFScraper Tests ---
