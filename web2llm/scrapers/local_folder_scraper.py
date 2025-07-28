@@ -1,5 +1,4 @@
 import os
-import re
 from datetime import datetime, timezone
 
 from .base_scraper import BaseScraper
@@ -12,14 +11,9 @@ class LocalFolderScraper(BaseScraper):
     from the GitHubScraper.
     """
 
-    def __init__(self, path: str, include_dirs: str, exclude_dirs: str, include_all: bool = False):
-        super().__init__(source=path)
-        try:
-            self.include_patterns = [re.compile(p.strip()) for p in include_dirs.split(",") if p.strip()]
-            self.exclude_patterns = [re.compile(p.strip()) for p in exclude_dirs.split(",") if p.strip()]
-        except re.error as e:
-            raise ValueError(f"Invalid regex pattern provided: {e}")
-        self.include_all = include_all
+    def __init__(self, path: str, config: dict):
+        super().__init__(source=path, config=config)
+        self.ignore_patterns = self.config.get("fs_scraper", {}).get("ignore_patterns", [])
 
     def scrape(self) -> tuple[str, dict]:
         if not os.path.isdir(self.source):
@@ -27,7 +21,7 @@ class LocalFolderScraper(BaseScraper):
 
         print(f"Processing local directory: {self.source}")
 
-        file_tree, concatenated_content = _process_directory(self.source, self.include_patterns, self.exclude_patterns, self.include_all)
+        file_tree, concatenated_content = _process_directory(self.source, self.ignore_patterns)
 
         scraped_at = datetime.now(timezone.utc).isoformat()
         folder_name = os.path.basename(os.path.normpath(self.source))

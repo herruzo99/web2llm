@@ -1,26 +1,96 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 
 @pytest.fixture
-def temp_project_dir(tmp_path: Path) -> Path:
-    """Creates a temporary directory structure mimicking a simple project."""
-    project_root = tmp_path / "my-test-project"
+def project_structure(tmp_path: Path) -> Path:
+    """
+    Creates a more complex temporary directory structure for testing filesystem scrapers.
+    """
+    root = tmp_path / "test-project"
+    root.mkdir()
 
-    src_dir = project_root / "src"
-    src_dir.mkdir(parents=True)
-    (src_dir / "main.py").write_text("print('hello world')")
-    (src_dir / "utils.py").write_text("# Utility functions")
+    # Top-level files
+    (root / "README.md").write_text("# Test Project")
+    (root / "main.py").write_text("print('main')")
+    (root / ".gitignore").write_text("*.log\n.env\n")
+    (root / "app.log").write_text("some log data")
+    (root / "poetry.lock").write_text("# lockfile")
+    (root / "LICENSE").write_text("MIT License")
 
-    docs_dir = project_root / "docs"
+    # Source directory
+    src_dir = root / "src"
+    src_dir.mkdir()
+    (src_dir / "app.py").write_text("import utils")
+    (src_dir / "utils.py").write_text("# utilities")
+    (src_dir / "__init__.py").write_text("")
+
+    # Build artifacts in source
+    pycache_dir = src_dir / "__pycache__"
+    pycache_dir.mkdir()
+    # HACK: Write invalid UTF-8 bytes to ensure is_likely_text_file() returns False.
+    # This simulates a real binary file.
+    (pycache_dir / "app.cpython-311.pyc").write_bytes(b"\x03\xf3\r\n")
+
+    # Docs directory
+    docs_dir = root / "docs"
     docs_dir.mkdir()
-    (docs_dir / "guide.md").write_text("# How to use this project")
+    (docs_dir / "index.md").write_text("# Docs")
+    (docs_dir / "image.png").write_bytes(b"\x89PNG\r\n\x1a\n")  # PNG header
 
-    (project_root / ".gitignore").write_text("*.pyc\n__pycache__/")
-    (project_root / "README.md").write_text("# My Test Project")
+    # Nested project/module
+    nested_dir = root / "components"
+    nested_dir.mkdir()
+    (nested_dir / "button.js").write_text("export default Button;")
 
-    return project_root
+    # Ignored by default
+    node_modules = root / "node_modules"
+    node_modules.mkdir()
+    (node_modules / "react").mkdir()
+    (node_modules / "react" / "index.js").write_text("// react source")
+
+    return root
+
+
+@pytest.fixture
+def default_config() -> dict:
+    """Provides a copy of the default configuration settings."""
+    # Abridged version of the default config for test clarity
+    return {
+        "fs_scraper": {
+            "ignore_patterns": [
+                ".git/",
+                "__pycache__/",
+                "node_modules/",
+                "*.pyc",
+                "*.log",
+                "poetry.lock",
+                "LICENSE",
+                "*.png",
+            ]
+        },
+        "web_scraper": {
+            "main_content_selectors": ["main", "article", "div.content"],
+            "nav_selectors": ["nav", "div.sidebar"],
+        },
+    }
+
+
+@pytest.fixture
+def project_config_file(project_structure: Path) -> Path:
+    """Creates a project-specific .web2llm.yaml file."""
+    config_path = project_structure / ".web2llm.yaml"
+    config_data = {
+        "fs_scraper": {
+            # Add a new rule and override a default
+            "ignore_patterns": ["docs/", "*.js"]
+        }
+    }
+    with open(config_path, "w") as f:
+        yaml.dump(config_data, f)
+    return config_path
 
 
 @pytest.fixture

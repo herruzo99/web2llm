@@ -1,0 +1,202 @@
+# Default configuration for web2llm.
+# This file provides a comprehensive set of ignore patterns for common files and directories
+# that are generally not needed to understand the source code of a project.
+#
+# Users can override these settings by creating a `.web2llm.yaml` file in their project root.
+# Patterns use the standard .gitignore syntax.
+
+fs_scraper:
+  # Patterns for files and directories to ignore during local and GitHub scrapes.
+  ignore_patterns:
+    # --- Version Control Systems ---
+    - ".git/"
+    - ".svn/"
+    - ".hg/"
+    - ".bzr/"
+
+    # --- Dependency Directories ---
+    - "node_modules/"
+    - "vendor/"      # Common for PHP (Composer), Go, Ruby
+    - "bower_components/"
+    - "jspm_packages/"
+    - "deps/"        # Common for Elixir, etc.
+    - "packages/"    # Common for .NET
+    - ".bundle/"     # Ruby Bundler
+
+    # --- Build Artifacts & Caches ---
+    - "build/"
+    - "dist/"
+    - "target/"      # Common for Rust, Java (Maven/Gradle)
+    - "bin/"         # Common for .NET, Go
+    - "obj/"         # Common for .NET
+    - "_build/"      # Common for Elixir, Dune
+    - "out/"
+    - "coverage/"
+    - "*.pyc"
+    - "*.pyo"
+    - "*.pyd"
+    - "*.class"
+    - "*.o"
+    - "*.so"
+    - "*.a"
+    - "*.dll"
+    - "*.exe"
+    - "*.jar"
+    - "*.war"
+    - "*.ear"
+    - "*.gem"
+    - "*.whl"
+    - "*.egg"
+    - "*.egg-info/"
+    - "*.gcno"
+    - "*.gcda"
+    - "*.gcov"
+
+    # --- Language & Framework Caches ---
+    - "__pycache__/"
+    - ".pytest_cache/"
+    - ".ruff_cache/"
+    - ".mypy_cache/"
+    - ".tox/"
+    - ".next/"       # Next.js
+    - ".nuxt/"       # Nuxt.js
+    - ".svelte-kit/" # SvelteKit
+    - ".cache/"
+    - ".gradle/"
+    - ".idea/"       # JetBrains IDEs
+    - ".vscode/"     # Visual Studio Code
+    - ".project"     # Eclipse
+    - ".classpath"
+    - ".settings/"
+    - "DerivedData/" # Xcode
+    - ".swiftpm/"    # Swift Package Manager
+    - ".stack-work/" # Haskell Stack
+
+    # --- Environment Folders ---
+    - ".venv/"
+    - "venv/"
+    - "env/"
+    - ".env/"
+
+    # --- Dependency Lock Files ---
+    # These files list exact dependency versions but aren't source code.
+    - "package-lock.json"
+    - "yarn.lock"
+    - "pnpm-lock.yaml"
+    - "poetry.lock"
+    - "Pipfile.lock"
+    - "uv.lock"
+    - "go.sum"
+    - "Cargo.lock"
+    - "composer.lock"
+    - "Gemfile.lock"
+    - "mix.lock"
+    - "project.lock.json" # .NET
+    - "packages.lock.json"
+    - "flake.lock"       # Nix
+
+    # --- Log, Temp, & OS-specific Files ---
+    - "*.log"
+    - "*.tmp"
+    - "*.swp"
+    - "*.swo"
+    - ".DS_Store"
+    - "Thumbs.db"
+
+    # --- Secrets & Local Overrides ---
+    # These should never be scraped.
+    - ".env"
+    - ".env.*"
+    - "!*.env.example" # Allow example env files
+    - "secrets.yml"
+    - "secrets.json"
+    - "*.local"
+
+    # --- Documentation & Metadata (often noisy) ---
+    # Can be re-included with a negation pattern, e.g., `!LICENSE`
+    - "LICENSE"
+    - "LICENSE.md"
+    - "LICENSE.txt"
+    - "COPYING"
+    - "CONTRIBUTING.md"
+    - "CHANGELOG.md"
+    - "HISTORY.md"
+    - "CODE_OF_CONDUCT.md"
+
+    # --- Binary & Media Files ---
+    - "*.png"
+    - "*.jpg"
+    - "*.jpeg"
+    - "*.gif"
+    - "*.webp"
+    - "*.svg"
+    - "*.ico"
+    - "*.pdf" # PDFs should be processed by the PDF scraper directly
+    - "*.zip"
+    - "*.tar"
+    - "*.gz"
+    - "*.rar"
+    - "*.7z"
+    - "*.mp3"
+    - "*.mp4"
+    - "*.mov"
+    - "*.wav"
+    - "*.flac"
+    - "*.ttf"
+    - "*.woff"
+    - "*.woff2"
+    - "*.eot"
+
+    # --- Terraform ---
+    - ".terraform/"
+    - ".terraform.lock.hcl"
+    - "*.tfstate"
+    - "*.tfstate.backup"
+
+
+web_scraper:
+  # CSS selectors to find the main content of a page, in order of priority.
+  # The list is ordered from most specific to most generic.
+  main_content_selectors:
+    # --- Documentation Sites (Modern) ---
+    - "main.VPContent"                      # VitePress / VuePress 3
+    - "main .md-content"                    # MkDocs Material
+    - "main .theme-doc-markdown"            # Docusaurus
+    - "article.md-content__inner"           # More MkDocs
+    # --- Documentation Sites (Classic) ---
+    - "div.body[role='main']"               # Sphinx / Read the Docs
+    - "div.main-content"                    # Just the Docs (Jekyll)
+    - "section.main-content"
+    # --- Content / Blogs ---
+    - "article.post-content"                # Common blog theme
+    - "div.entry-content"                   # Classic WordPress
+    - "div.gh-content"                      # Ghost CMS
+    - "article.article-body"                # Help centers (e.g., Zendesk)
+    # --- Generic Layouts ---
+    - "main#content"
+    - 'main[role="main"]'
+    - "main article"
+    - "div#main-content"
+    - 'div[role="main"]'
+    - "div.book"
+    - "div.content"
+    - "article"
+    - "main"
+
+  # CSS selectors for navigation menus, used to extract site structure.
+  nav_selectors:
+    # --- Documentation Sites ---
+    - "aside.VPSidebar"                     # VitePress
+    - "nav.md-nav--primary"                 # MkDocs Material
+    - "div.theme-doc-sidebar-menu"          # Docusaurus
+    - "div.wy-menu-vertical"                # Sphinx / Read the Docs
+    - "nav.td-sidebar-nav"                  # Docsy (Hugo)
+    - 'div[role="navigation"]'
+    # --- Generic ---
+    - 'nav[aria-label="Main"]'
+    - 'nav[aria-label="Primary"]'
+    - ".sidebar"
+    - "#sidebar"
+    - "aside.sidebar"
+    - "nav#main-nav"
+    - "nav"

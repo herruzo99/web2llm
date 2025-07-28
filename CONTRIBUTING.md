@@ -11,7 +11,7 @@ First off, thank you for considering contributing! This project is made better b
 
 ## Setting up the Development Environment
 
-To get started, you'll need a recent version of Python (3.9+).
+To get started, you'll need a recent version of Python (3.10+).
 
 1.  **Clone the repository:**
     ___bash

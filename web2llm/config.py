@@ -1,119 +1,57 @@
 """
-Central configuration for scrapers.
+Handles loading and merging of configuration from YAML files.
 """
 
-# Configuration for GitHub and local folder scrapers.
-# Used to ignore common clutter and binary files.
-CODE_IGNORE_CONFIG = {
-    "directories": [
-        ".git",
-        ".github",
-        ".vscode",
-        ".idea",
-        "__pycache__",
-        "node_modules",
-        "vendor",
-        "target",
-        "build",
-        "dist",
-        "venv",
-        "env",
-        ".cache",
-        "docs",
-    ],
-    "filenames": [
-        # Common metadata and config files
-        ".gitignore",
-        ".editorconfig",
-        ".ds_store",
-        "thumbs.db",
-        # Lock files
-        "package-lock.json",
-        "yarn.lock",
-        "pnpm-lock.yaml",
-        "poetry.lock",
-        "pipfile.lock",
-        "cargo.lock",
-        "composer.lock",
-        "gemfile.lock",
-        "go.sum",
-        # Common docs (can be overridden with --include-dirs)
-        "license",
-        "license.md",
-        "license.txt",
-        "contributing.md",
-        "contributors.md",
-        "code_of_conduct.md",
-        "security.md",
-        "changelog.md",
-        "history.md",
-        "authors.md",
-    ],
-    "extensions": [
-        # Compiled files, logs, and other non-source artifacts
-        ".log",
-        ".tmp",
-        ".swp",
-        ".swo",
-        ".env",
-        ".pyc",
-        ".pyo",
-        ".o",
-        ".so",
-        ".dll",
-        ".exe",
-        ".class",
-        ".jar",
-        ".deb",
-        ".rpm",
-        # Media files
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".webp",
-        ".svg",
-        ".mp4",
-        ".mp3",
-        ".mov",
-        ".wav",
-        ".ico",
-    ],
-}
+import collections.abc
+from pathlib import Path
 
-# Configuration for the generic web scraper.
-WEB_SCRAPER_CONFIG = {
-    # CSS selectors to find the main content of a page, in order of priority.
-    "main_content_selectors": [
-        "main .md-content",
-        "main.VPContent",
-        "main#content",
-        "main article",
-        'div[role="main"]',
-        "div.book",
-        "div.body",
-        "article",
-        "main",
-        "div#main",
-        "div.main-content",
-        "div#content",
-        "div.content",
-    ],
-    # CSS selectors to find navigation elements for extracting site structure.
-    "nav_selectors": [
-        'div[role="navigation"]',
-        "nav.md-nav--primary",
-        "aside.VPSidebar",
-        "nav.sidebar-container",
-        "aside.theme-doc-sidebar-container-mobile",
-        "div.toc",
-        'nav[aria-label="Main"]',
-        "nav#main-nav",
-        ".bd-sidebar-primary",
-        "nav#bd-docs-nav",
-        "div.wy-menu-vertical",
-        'div[class*="sidebar"]',
-        'div[id*="sidebar"]',
-        "nav",
-    ],
-}
+import yaml
+
+try:
+    # Python 3.9+
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Python < 3.9
+    import importlib_resources as pkg_resources
+
+
+def _deep_merge_dict(base: dict, new: dict) -> dict:
+    """
+    Recursively merges dict `new` into `base`.
+    If a key exists in both and the value is a dict, it merges the sub-dicts.
+    Otherwise, the value from `new` overwrites the value in `base`.
+    """
+    for key, value in new.items():
+        if isinstance(value, collections.abc.Mapping) and key in base and isinstance(base[key], collections.abc.Mapping):
+            base[key] = _deep_merge_dict(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
+def load_and_merge_configs() -> dict:
+    """
+    Loads configuration with a clear priority: Defaults < Project Config.
+
+    1.  Loads the default config bundled with the package.
+    2.  Searches for a `.web2llm.yaml` in the current working directory.
+    3.  If found, merges the project config over the defaults.
+
+    Returns:
+        The final, merged configuration dictionary.
+    """
+    # 1. Load default config from package data
+    with pkg_resources.open_text(__package__, "default_config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    # 2. Find and load project-specific config, if it exists
+    project_config_path = Path.cwd() / ".web2llm.yaml"
+    if project_config_path.is_file():
+        print(f"Found project configuration at: {project_config_path}")
+        with open(project_config_path, "r", encoding="utf-8") as f:
+            project_config = yaml.safe_load(f)
+
+        if project_config:
+            config = _deep_merge_dict(config, project_config)
+
+    return config

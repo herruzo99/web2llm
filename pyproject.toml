@@ -1,18 +1,17 @@
 [project]
 name = "web2llm"
-version = "0.1.0"
+version = "0.2.0"
 description = "A tool to scrape web content into clean Markdown for LLMs."
 authors = [
   { name = "Your Name", email = "your.email@example.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = ["scraper", "llm", "markdown", "web scraping", "pdf", "github"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,6 +31,8 @@ dependencies = [
     "markdownify",
     "GitPython",
     "pdfplumber",
+    "PyYAML",
+    "pathspec",
 ]
 
 [project.urls]
@@ -55,6 +56,10 @@ dev = [
 where = ["."]
 include = ["web2llm*"]
 exclude = ["tests*"]
+
+[tool.setuptools]
+package-data = {"web2llm" = ["default_config.yaml"]}
+
 
 [tool.ruff]
 line-length = 140
