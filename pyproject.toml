@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "web2llm"
-version = "0.2.0"
+version = "0.3.0" # SemVer minor bump for new feature handling
 description = "A tool to scrape web content into clean Markdown for LLMs."
 authors = [
   { name = "Juan Herruzo", email = "juan@herruzo.dev" },
@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests",
+    # playwright is now an optional dependency
     "beautifulsoup4",
     "lxml",
     "markdownify",
@@ -36,6 +36,7 @@ dependencies = [
     "pdfplumber",
     "PyYAML",
     "pathspec",
+    "httpx[http2]",
 ]
 
 [project.urls]
@@ -43,16 +44,22 @@ Homepage = "https://github.com/herruzo99/web2llm"
 "Bug Tracker" = "https://github.com/herruzo99/web2llm/issues"
 
 [project.scripts]
-web2llm = "web2llm.cli:main"
+web2llm = "web2llm.cli:cli_entrypoint"
 
 [project.optional-dependencies]
+# Feature-specific group for JavaScript rendering
+js = [
+    "playwright",
+]
 test = [
     "pytest",
     "pytest-mock",
+    "pytest-asyncio",
 ]
 dev = [
     "ruff",
     "pre-commit",
+    "web2llm[js,test]",
 ]
 
 [tool.setuptools.packages.find]
@@ -72,3 +79,5 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"

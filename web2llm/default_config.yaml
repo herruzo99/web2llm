@@ -158,6 +158,8 @@ web_scraper:
   # CSS selectors to find the main content of a page, in order of priority.
   # The list is ordered from most specific to most generic.
   main_content_selectors:
+    # --- Project Hosting & Registries ---
+    - "div.project-description"             # PyPI Project Description
     # --- Documentation Sites (Modern) ---
     - "main.VPContent"                      # VitePress / VuePress 3
     - "main .md-content"                    # MkDocs Material

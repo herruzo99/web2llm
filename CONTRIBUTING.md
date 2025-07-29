@@ -1,17 +1,12 @@
-# Contributing to Web2LLM
+# Contributing to web2llm
 
-First off, thank you for considering contributing! This project is made better by the community.
+First off, thank you for considering contributing to `web2llm`. Your help is appreciated.
 
-## Ways to Contribute
+This document provides guidelines for contributing to the project.
 
--   Reporting bugs
--   Suggesting enhancements
--   Submitting pull requests with new features or bug fixes
--   Improving documentation
+## Development Setup
 
-## Setting up the Development Environment
-
-To get started, you'll need a recent version of Python (3.10+).
+We recommend using a Python virtual environment to manage dependencies for local development. This project supports Python 3.10 and newer.
 
 1.  **Clone the repository:**
     ___bash
@@ -21,69 +16,67 @@ To get started, you'll need a recent version of Python (3.10+).
 
 2.  **Create and activate a virtual environment:**
     ___bash
-    # For Unix/macOS
+    # Create the environment
     python3 -m venv .venv
+
+    # Activate it (on macOS/Linux)
     source .venv/bin/activate
 
-    # For Windows
-    python -m venv .venv
-    .venv\Scripts\activate
+    # On Windows (PowerShell)
+    # .\.venv\Scripts\Activate.ps1
     ___
 
-3.  **Install the project in editable mode with development dependencies:**
-    This will install the project and all the tools needed for development, testing, and quality checks.
+3.  **Install dependencies in editable mode:**
+    The project uses `setuptools` and optional dependencies. The `[dev]` extra includes all dependencies needed for development, testing, and optional features like JavaScript rendering.
+
     ___bash
-    pip install -e ".[dev,test]"
+    pip install -e ".[dev]"
     ___
+    This command installs the package itself in "editable" mode (`-e`), so changes you make to the source code are immediately effective.
 
-## Running Quality Checks
+4.  **Install pre-commit hooks:**
+    This project uses `pre-commit` to automatically run linters and formatters (`ruff`) on every commit. This ensures code style consistency.
 
-To maintain code quality, we use `ruff` for linting/formatting and `pytest` for testing. The way to use these tools is with **pre-commit hooks**, which automatically run checks before you create a commit.
-
-### The Recommended Way: Pre-Commit Hooks
-
-This is the "set it and forget it" approach. Once installed, it will run on every commit automatically.
-
-1.  **Install pre-commit hooks:**
-    After setting up the environment (which installs `pre-commit` via `pip`), run this command once:
     ___bash
     pre-commit install
     ___
+    Now, `ruff` will check and format your code each time you run `git commit`.
 
-2.  **Commit your code:**
-    Now, when you run `git commit`, `ruff` and other checks will run automatically on the files you've staged. If an issue is found (like a formatting error), the commit will be aborted, and `ruff` might fix the file for you automatically. Just `git add` the fixed file and try your commit again.
+## Running Tests
 
-### The Manual Way
+The test suite uses `pytest`. To run all tests, execute the following command from the project root:
 
-You can also run the checks manually at any time.
-
-#### Running the Linter (`ruff`)
-
--   To check for linting errors and formatting issues:
-    ___bash
-    ruff check .
-    ruff format --check .
-    ___
-
--   To automatically fix linting and formatting issues:
-    ___bash
-    ruff check . --fix
-    ruff format .
-    ___
-
-#### Running Tests (`pytest`)
-
-To run the full test suite:
 ___bash
 pytest
 ___
 
-## Submitting a Pull Request
+Before submitting a contribution, please ensure all tests pass.
 
-1.  Create a new branch for your feature or bug fix: `git checkout -b feature/your-amazing-feature`.
-2.  Make your changes and commit them (the pre-commit hooks will ensure quality).
-3.  Push your branch to your fork on GitHub.
-4.  Open a pull request from your fork to the `main` branch of the original repository.
-5.  In the pull request description, please describe your changes and reference any related issues.
+## Code Style
 
-Thank you for your contribution!
+Code style is enforced by **Ruff**. The pre-commit hook will automatically format your code. However, you can also run the formatter and linter manually:
+
+___bash
+# To format all files
+ruff format .
+
+# To check for linting errors
+ruff check .
+___
+
+## Submitting Changes
+
+1.  **Fork the repository** on GitHub.
+2.  **Create a new branch** for your feature or bugfix from the `main` branch.
+    ___bash
+    git checkout -b feature/my-awesome-feature
+    ___
+3.  **Make your changes** and commit them with a clear, descriptive message.
+4.  **Ensure all tests and linters pass** locally.
+5.  **Push your branch** to your fork on GitHub.
+    ___bash
+    git push origin feature/my-awesome-feature
+    ___
+6.  **Open a Pull Request** to the `main` branch of the original repository.
+    - Provide a clear title for your PR (e.g., "Feat: Add support for XYZ" or "Fix: Correctly parse ABC").
+    - In the description, explain the "why" behind your changes and link to any relevant issues.

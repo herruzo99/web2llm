@@ -1,3 +1,4 @@
+import importlib.resources as pkg_resources
 from pathlib import Path
 
 import pytest
@@ -56,26 +57,13 @@ def project_structure(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def default_config() -> dict:
-    """Provides a copy of the default configuration settings."""
-    # Abridged version of the default config for test clarity
-    return {
-        "fs_scraper": {
-            "ignore_patterns": [
-                ".git/",
-                "__pycache__/",
-                "node_modules/",
-                "*.pyc",
-                "*.log",
-                "poetry.lock",
-                "LICENSE",
-                "*.png",
-            ]
-        },
-        "web_scraper": {
-            "main_content_selectors": ["main", "article", "div.content"],
-            "nav_selectors": ["nav", "div.sidebar"],
-        },
-    }
+    """
+    Provides a real, parsed copy of the default configuration settings.
+    This ensures tests run against the production default config.
+    """
+    with pkg_resources.open_text("web2llm", "default_config.yaml") as f:
+        config = yaml.safe_load(f)
+    return config
 
 
 @pytest.fixture

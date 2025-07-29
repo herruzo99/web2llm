@@ -1,0 +1,64 @@
+# Reusable workflow for running tests and linters.
+# This workflow is called by other CI/CD pipelines to avoid duplication.
+name: Run Tests
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: '3.12'
+
+jobs:
+  # This job runs the full test suite with all optional dependencies installed.
+  test-full:
+    name: Full Test Suite (Python ${{ inputs.python-version }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install all dependencies for development and testing
+        run: |
+          python -m pip install --upgrade pip
+          # Installs the package in editable mode with the [dev] and [test] extras.
+          pip install -e ".[dev,test]"
+
+      - name: Lint and format check with ruff
+        run: |
+          ruff format --check .
+          ruff check .
+
+      - name: Run unit tests with pytest
+        run: pytest
+
+  # This job validates that the application works with a minimal installation
+  # (i.e., without optional dependencies like Playwright).
+  test-minimal-install:
+    name: Minimal Install Test (Python ${{ inputs.python-version }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install package with no extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Run a basic command without optional features
+        # This command performs a static web scrape. It should succeed without the [js] extra.
+        # If it fails (e.g., with an ImportError), it means an optional dependency
+        # is being incorrectly imported at the top level.
+        run: web2llm https://example.com -o test-output
