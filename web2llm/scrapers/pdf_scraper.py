@@ -110,7 +110,7 @@ class PDFScraper(BaseScraper):
                 for i, page in enumerate(pdf.pages):
                     text = page.extract_text(keep_blank_chars=True, x_tolerance=2) or ""
                     pdf_content += f"\n\n--- Page {i + 1} ---\n\n{text}"
-                    self.logger.debug(f"  - Extracted {len(text)} characters from page {i+1}.")
+                    self.logger.debug(f"  - Extracted {len(text)} characters from page {i + 1}.")
 
         finally:
             if pdf_handle and not is_remote:

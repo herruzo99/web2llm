@@ -66,7 +66,7 @@ async def _fetch_html_playwright(url: str, wait_for_selectors: list[str] | None 
         from playwright.async_api import TimeoutError, async_playwright
     except ImportError:
         error_message = (
-            "Playwright is not installed, but is required for the --render-js flag.\n" 'Please install it with: pip install "web2llm[js]"'
+            'Playwright is not installed, but is required for the --render-js flag.\nPlease install it with: pip install "web2llm[js]"'
         )
         raise ImportError(error_message)
 
@@ -89,7 +89,7 @@ async def _fetch_html_playwright(url: str, wait_for_selectors: list[str] | None 
             return content
     except PlaywrightError as e:
         if "Executable doesn't exist" in e.message:
-            error_message = "Playwright browser binaries not found.\n" "Please run `playwright install` to download them."
+            error_message = "Playwright browser binaries not found.\nPlease run `playwright install` to download them."
             raise RuntimeError(error_message) from e
         raise IOError(f"A browser automation error occurred while fetching '{url}': {e}")
     except Exception as e:
