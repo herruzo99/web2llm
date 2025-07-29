@@ -184,6 +184,8 @@ web_scraper:
     - "div.content"
     - "article"
     - "main"
+    - "div"
+    - "body"
 
   # CSS selectors for navigation menus, used to extract site structure.
   nav_selectors:
