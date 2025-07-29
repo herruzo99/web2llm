@@ -76,7 +76,7 @@ async def test_github_scraper_assembles_correct_markdown(mocker, mock_github_api
     mocker.patch("web2llm.scrapers.github_scraper.fetch_json", new_callable=AsyncMock, return_value=mock_github_api_response)
     mocker.patch("git.Repo.clone_from")
     mock_process_dir = mocker.patch(
-        "web2llm.utils.process_directory",
+        "web2llm.scrapers.github_scraper.process_directory",
         return_value=("file_tree_placeholder", "concatenated_content_placeholder"),
     )
     scraper = GitHubScraper("https://github.com/test-owner/test-repo", default_config)
