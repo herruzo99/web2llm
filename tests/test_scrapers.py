@@ -104,7 +104,10 @@ async def test_scraper_finds_main_content(mocker, default_config):
 async def test_scraper_raises_content_not_found_without_render_js(mocker, default_config):
     mocker.patch("web2llm.scrapers.generic_scraper.fetch_html", new_callable=AsyncMock, return_value="<html><body></body></html>")
     scraper = GenericScraper("http://example.com", {**default_config, "render_js": False})
-    with pytest.raises(ContentNotFoundError, match="Try again with the --render-js flag"):
+    with pytest.raises(
+        ContentNotFoundError,
+        match="Main content found but empty. The page structure may be unsupported or the selectors in your config are incorrect.",
+    ):
         await scraper.scrape()
 
 

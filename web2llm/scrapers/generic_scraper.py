@@ -163,7 +163,6 @@ class GenericScraper(BaseScraper):
                 main_element = soup.select_one(selector)
                 if main_element:
                     break
-
         if not main_element:
             if not self.render_js:
                 raise ContentNotFoundError(
@@ -214,6 +213,10 @@ class GenericScraper(BaseScraper):
             wrap=False,
             wrap_last_p=False,
         )
+        if not content_md:
+            raise ContentNotFoundError(
+                "Main content found but empty. The page structure may be unsupported or the selectors in your config are incorrect."
+            )
 
         nav_element = soup.select_one("nav")
         nav_links = self._extract_links_recursive(nav_element, self.source)
