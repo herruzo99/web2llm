@@ -25,7 +25,7 @@
     in
     {
       # Generate a devShell for each supported system.
-      devShells = forAllSystems (system:
+      devShell = forAllSystems (system:
         let
           pkgs = pkgsFor system;
 

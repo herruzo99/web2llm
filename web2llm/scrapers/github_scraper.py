@@ -2,6 +2,7 @@ import re
 import sys
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 import git
 import yaml
@@ -36,7 +37,15 @@ class GitHubScraper(BaseScraper):
             self.logger.debug(f"Cloning repository from {repo_url} into {temp_dir}")
             git.Repo.clone_from(repo_url, temp_dir, depth=1)
             self.logger.debug("Clone successful.")
-            file_tree, concatenated_content = process_directory(temp_dir, self.ignore_patterns, self.debug)
+            # Combine base ignore patterns with patterns from the repo's .gitignore
+            repo_root = Path(temp_dir)
+            combined_ignore_patterns = list(self.ignore_patterns)
+            gitignore_path = repo_root / ".gitignore"
+            if gitignore_path.is_file() and not self.include_all:
+                self.logger.debug("Found .gitignore in repository, adding its patterns.")
+                combined_ignore_patterns.extend(gitignore_path.read_text(encoding="utf-8").splitlines())
+
+            file_tree, concatenated_content = process_directory(str(repo_root), combined_ignore_patterns, self.debug)
 
         front_matter = self._create_front_matter(repo_data)
         final_markdown = f"{front_matter}\n## Repository File Tree\n\n```\n{file_tree}\n```\n\n## File Contents\n\n{concatenated_content}"

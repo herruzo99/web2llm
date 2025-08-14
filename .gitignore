@@ -66,3 +66,7 @@ venv.bak/
 
 # Project-specific
 output/
+
+# direnv
+.envrc
+.direnv

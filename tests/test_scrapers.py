@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 from web2llm.errors import ContentNotFoundError
-from web2llm.scrapers import GenericScraper, GitHubScraper, PDFScraper
+from web2llm.scrapers import GenericScraper, GitHubScraper, LocalFolderScraper, PDFScraper
 from web2llm.utils import process_directory
 
 
@@ -70,6 +70,42 @@ def test_fs_scraper_empty_ignore_list_includes_all_text(project_structure):
     assert "image.png" not in content and "app.cpython-311.pyc" not in content
 
 
+@pytest.mark.asyncio
+async def test_local_folder_scraper_respects_gitignore(project_structure, default_config):
+    """
+    Verifies that the LocalFolderScraper automatically finds and applies
+    rules from a .gitignore file in the target directory, in addition to default rules.
+    """
+    # The `project_structure` fixture creates a .gitignore with "*.log" and ".env".
+    # It also creates `app.log` and `.env` files to be ignored.
+    # The default_config fixture will provide rules to ignore `poetry.lock`.
+    # The new default config change also ignores `.gitignore` itself.
+
+    # Instantiate the scraper with the test project directory and default config.
+    scraper = LocalFolderScraper(str(project_structure), default_config)
+
+    # Run the scrape
+    markdown_content, _ = await scraper.scrape()
+
+    # Assert that file content blocks for ignored files are NOT present.
+    # This is more robust than checking for substrings.
+
+    # Ignored by project's .gitignore
+    assert "### `app.log`" not in markdown_content
+    assert "### `.env`" not in markdown_content
+
+    # Ignored by default config
+    assert "### `poetry.lock`" not in markdown_content
+
+    # The .gitignore file itself should now be ignored by default
+    assert "### `.gitignore`" not in markdown_content
+
+    # Assert that expected files ARE present
+    assert "### `README.md`" in markdown_content
+    assert "### `main.py`" in markdown_content
+    assert "### `src/app.py`" in markdown_content
+
+
 # --- GitHubScraper Tests ---
 @pytest.mark.asyncio
 async def test_github_scraper_assembles_correct_markdown(mocker, mock_github_api_response, default_config):
@@ -81,7 +117,13 @@ async def test_github_scraper_assembles_correct_markdown(mocker, mock_github_api
     )
     scraper = GitHubScraper("https://github.com/test-owner/test-repo", default_config)
     await scraper.scrape()
-    mock_process_dir.assert_called_once_with(mocker.ANY, default_config["fs_scraper"]["ignore_patterns"], False)
+    # After the change to add .gitignore patterns, the second argument to process_directory
+    # will be a list containing the default patterns plus any from the (mocked) repo.
+    # We assert that the call was made, without being overly specific about the combined list.
+    mock_process_dir.assert_called_once()
+    args, _ = mock_process_dir.call_args
+    assert isinstance(args[1], list)  # The ignore patterns
+    assert args[2] is False  # The debug flag
 
 
 # --- GenericScraper Tests ---

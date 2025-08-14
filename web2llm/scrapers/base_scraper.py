@@ -11,6 +11,7 @@ class BaseScraper(ABC):
         self.debug = self.config.get("debug", False)
         self.render_js = self.config.get("render_js", False)
         self.check_content_type = self.config.get("check_content_type", False)
+        self.include_all = self.config.get("include_all", False)
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod

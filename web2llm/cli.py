@@ -73,7 +73,7 @@ async def main():
     fs_group.add_argument(
         "--include-all",
         action="store_true",
-        help="Scrape all files, ignoring default and project-level ignore patterns.",
+        help="Scrape all files, ignoring default, project-level, and .gitignore ignore patterns.",
     )
 
     args = parser.parse_args()
@@ -88,9 +88,10 @@ async def main():
         config["debug"] = args.debug
         config["render_js"] = args.render_js
         config["check_content_type"] = args.check_content_type
+        config["include_all"] = args.include_all
 
         if args.include_all:
-            logger.debug("--include-all flag is set. Clearing default ignore patterns.")
+            logger.debug("--include-all flag is set. Clearing default ignore patterns and disabling .gitignore handling.")
             config["fs_scraper"]["ignore_patterns"] = []
 
         include_patterns = [f"!{p}" if not p.startswith("!") else p for p in args.include]

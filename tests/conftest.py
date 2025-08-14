@@ -18,6 +18,7 @@ def project_structure(tmp_path: Path) -> Path:
     (root / "main.py").write_text("print('main')")
     (root / ".gitignore").write_text("*.log\n.env\n")
     (root / "app.log").write_text("some log data")
+    (root / ".env").write_text("SECRET=value")  # Added to be ignored by .gitignore
     (root / "poetry.lock").write_text("# lockfile")
     (root / "LICENSE").write_text("MIT License")
 

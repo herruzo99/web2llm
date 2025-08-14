@@ -1,6 +1,6 @@
-import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 import yaml
 
@@ -25,13 +25,23 @@ class LocalFolderScraper(BaseScraper):
                 "Warning: The --render-js flag is not applicable to local folder scraping and will be ignored.", file=sys.stderr
             )
         self.logger.debug(f"Starting scrape for local path: {self.source}")
-        if not os.path.isdir(self.source):
+        # Use pathlib for modern path manipulation and consistency
+        folder_root = Path(self.source)
+        if not folder_root.is_dir():
             raise NotADirectoryError(f"The provided path is not a directory: {self.source}")
 
         self.logger.info(f"Processing local directory: {self.source}")
-        file_tree, concatenated_content = process_directory(self.source, self.ignore_patterns, self.debug)
 
-        folder_name = os.path.basename(os.path.normpath(self.source))
+        # Combine base ignore patterns with patterns from the folder's .gitignore
+        combined_ignore_patterns = list(self.ignore_patterns)
+        gitignore_path = folder_root / ".gitignore"
+        if gitignore_path.is_file() and not self.include_all:
+            self.logger.debug("Found .gitignore in local folder, adding its patterns.")
+            combined_ignore_patterns.extend(gitignore_path.read_text(encoding="utf-8").splitlines())
+
+        file_tree, concatenated_content = process_directory(str(folder_root), combined_ignore_patterns, self.debug)
+
+        folder_name = folder_root.name
         scraped_at = datetime.now(timezone.utc).isoformat()
 
         front_matter_data = {

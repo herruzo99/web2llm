@@ -11,26 +11,26 @@ This tool provides a unified interface to process various sources—from live we
 ## Installation
 
 For standard scraping of static websites, local files, and GitHub repositories, install the base package:
-```bash
+___bash
 pip install web2llm
-```
+___
 To enable JavaScript rendering for Single-Page Applications (SPAs) and other dynamic websites, you must install the `[js]` extra, which includes Playwright:
-```bash
+___bash
 pip install "web2llm[js]"
-```
+___
 After installing the `js` extra, you must also download the necessary browser binaries for Playwright to function:
-```bash
+___bash
 playwright install
-```
+___
 ## Usage
 
 ### Command-Line Interface
 
 The tool is run from the command line with the following structure:
 
-```bash
+___bash
 web2llm <SOURCE> -o <OUTPUT_NAME> [OPTIONS]
-```
+___
 -   `<SOURCE>`: The URL or local path to scrape.
 -   `-o, --output`: The base name for the output folder and the `.md` and `.json` files created inside it.
 
@@ -44,9 +44,11 @@ All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
 - `--check-content-type`: Force a network request to check the page's `Content-Type` header. Use for URLs that serve PDFs without a `.pdf` extension.
 
 #### Filesystem Options (For GitHub & Local Folders):
+When scraping a local folder or a GitHub repository, `web2llm` will automatically find and respect the rules in the project's `.gitignore` file. This ensures that the scrape accurately reflects the intended source code of the project.
+
 -   `--exclude <PATTERN>`: A `.gitignore`-style pattern for files/directories to exclude. Can be used multiple times.
 -   `--include <PATTERN>`: A pattern to re-include a file that would otherwise be ignored by default or by an `--exclude` rule. Can be used multiple times.
--   `--include-all`: Disables all default and project-level ignore patterns. Explicit `--exclude` flags are still respected.
+-   `--include-all`: Disables all default, project-level, and `.gitignore` ignore patterns, providing a complete scrape of all text-based files. Explicit `--exclude` flags are still respected.
 
 ### Configuration
 
@@ -59,34 +61,34 @@ All scraped content is saved to a new directory at `output/<OUTPUT_NAME>/`.
 ## Examples
 
 **1. Scrape a specific directory within a GitHub repo:**
-```bash
+___bash
 web2llm 'https://github.com/tiangolo/fastapi' -o fastapi-src --include 'fastapi/'
-```
+___
 
 **2. Scrape a local project, excluding test and documentation folders:**
-```bash
+___bash
 web2llm '~/dev/my-project' -o my-project-code --exclude 'tests/' --exclude 'docs/'
-```
+___
 
 **3. Scrape a local project but re-include the `LICENSE` file, which is ignored by default:**
-```bash
+___bash
 web2llm '.' -o my-project-with-license --include '!LICENSE'
-```
+___
 
-**4. Scrape everything in a project except the `.git` directory:**
-```bash
+**4. Scrape everything in a project, including files normally ignored by `.gitignore`:**
+___bash
 web2llm . -o my-project-full --include-all --exclude '.git/'
-```
+___
 
 **5. Scrape just the "Installation" section from a webpage:**
-```bash
+___bash
 web2llm 'https://fastapi.tiangolo.com/#installation' -o fastapi-install
-```
+___
 
 **6. Scrape a PDF from an arXiv URL:**
-```bash
+___bash
 web2llm 'https://arxiv.org/pdf/1706.03762.pdf' -o attention-is-all-you-need
-```
+___
 
 ## Contributing
 
